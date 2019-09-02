@@ -1,0 +1,20 @@
+@font-face {
+    font-family: 'n-font';
+    src: url('../font/ARLRDBD.TTF') format('truetype');
+}
+
+.bg {
+    position: fixed;
+    width: 100%;
+    height: 100vh;
+    top: 0;
+    z-index: -1;
+}
+
+body {
+    margin: 0;
+}
+
+.flex-grow {
+    flex-grow: 1;
+}

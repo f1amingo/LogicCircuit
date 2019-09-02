@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>HAPPY ELIMINATING</title>
+    <link rel="stylesheet" type="text/css" href="../assets/css/basic.css"/>
+    <!--    <script src="../assets/js/vue.js"></script>-->
+    <script src="../assets/js/vue.min.js"></script>
+    <link rel="stylesheet" href="../assets/css/iview.css">
+    <script src="../assets/js/iview.min.js"></script>
+    <script src="../assets/js/createjs.min.js"></script>
+    <script src="../assets/js/preloadjs.min.js"></script>
+    <script src="../assets/js/tweenjs.min.js"></script>
+    <script src="../assets/js/soundjs.min.js"></script>
+</head>
+<body>
+<div id="app">
+    <img src="../assets/img/bg.jpg" class="bg" alt/>
+    <div class="div-login">
+        <div v-show="username===''" style="margin-right: 5px;">
+            <Icon size="24" color="#fa9d00" type="md-cloud"/>
+        </div>
+        <div v-show="username===''"
+             @click="toLoginPage()"
+             style="cursor: pointer;">login/register
+        </div>
+        <div @click="toLoginPage()" v-show="username!==''" class="div-avatar"><img src="../assets/img/avatar.png"></div>
+    </div>
+    <div class="title">
+        <img src="../assets/img/home/title.png" alt="title">
+    </div>
+    <div v-for="(item,index) in actionBtnList"
+         class="row-btn">
+        <img @click="toIndex(index)"
+             @mouseenter="mouseEnter(item)"
+             @mouseleave="item.hover=false"
+             :src="item.hover?item.imgHover:item.img" alt>
+    </div>
+    <div class="row-continue">
+        <img src="../assets/img/home/continue.png" alt>
+    </div>
+</div>
+</body>
+
+<script>
+    const app = new Vue({
+        el: '#app',
+        data: {
+            actionBtnList: [
+                {
+                    img: '../assets/img/home/what.png',
+                    imgHover: '../assets/img/home/what_hover.png',
+                    hover: false,
+                }, {
+                    img: '../assets/img/home/how.png',
+                    imgHover: '../assets/img/home/how_hover.png',
+                    hover: false,
+                }, {
+                    img: '../assets/img/home/easy.png',
+                    imgHover: '../assets/img/home/easy_hover.png',
+                    hover: false,
+                }, {
+                    img: '../assets/img/home/medium.png',
+                    imgHover: '../assets/img/home/medium_hover.png',
+                    hover: false,
+                }, {
+                    img: '../assets/img/home/hard.png',
+                    imgHover: '../assets/img/home/hard_hover.png',
+                    hover: false,
+                },
+            ],
+            username: 'a',
+            queue: {},
+        },
+        mounted() {
+            this.username = localStorage.getItem('username');
+            this.queue = new createjs.LoadQueue();
+            this.queue.installPlugin(createjs.Sound);
+            this.queue.on("complete", handleComplete, this);
+            this.queue.loadManifest([
+                {id: "bg", src: '../assets/mp3/bg.mp3'},
+                {id: "mover", src: '../assets/mp3/mover.mp3'},
+            ]);
+
+            function handleComplete() {
+                createjs.Sound.play("bg", {loop: -1});
+            }
+        },
+        methods: {
+            mouseEnter(item) {
+                item.hover = true;
+                createjs.Sound.play("mover");
+            },
+            toLoginPage() {
+                window.location.href = './loginRegister.html'
+            },
+            toIndex(index) {
+                window.localStorage.setItem('curIndex', index);
+                window.location.href = './page.html'
+            }
+        }
+    })
+</script>
+
+<style lang="less">
+    .div-avatar img {
+        width: 32px;
+        cursor: pointer;
+    }
+
+    .div-login {
+        align-items: center;
+        display: flex;
+        position: fixed;
+        top: 24px;
+        left: 24px;
+        color: #fa9d00;
+    }
+
+    .div-login:hover {
+        text-decoration: underline;
+    }
+
+    .row-btn {
+        text-align: center;
+    }
+
+    .row-btn img {
+        height: 10vh;
+        cursor: pointer;
+    }
+
+    .title {
+        text-align: center;
+        margin-bottom: -8vh;
+    }
+
+    .title img {
+        width: 80%;
+        padding-left: 10%;
+        padding-right: 10%;
+        padding-top: 5vh;
+    }
+
+    .row-continue {
+        text-align: center;
+        margin-top: 2vh;
+    }
+
+    .row-continue img {
+        width: 15%;
+    }
+
+</style>
+</html>

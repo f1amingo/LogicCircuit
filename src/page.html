@@ -1,0 +1,1173 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>HAPPY ELIMINATING</title>
+    <link rel="stylesheet" type="text/css" href="../assets/css/basic.css"/>
+    <!--    <script src="../assets/js/vue.js"></script>-->
+    <script src="../assets/js/vue.min.js"></script>
+    <!-- import stylesheet -->
+    <link rel="stylesheet" href="../assets/css/iview.css">
+    <!-- import iView -->
+    <script src="../assets/js/iview.min.js"></script>
+    <script src="../assets/js/createjs.min.js"></script>
+    <script src="../assets/js/preloadjs.min.js"></script>
+    <script src="../assets/js/tweenjs.min.js"></script>
+    <script src="../assets/js/soundjs.min.js"></script>
+</head>
+<body>
+<div id="app">
+    <!--    关卡对话框-->
+    <Modal class="z-modal"
+           footer-hide
+           v-model="modalLevel">
+        <div class="level-body">
+            <div class="level-content">
+                <img class="level-bg" src="../assets/img/level/bg.png">
+                <img class="img-ribbon" src="../assets/img/level/ribbon.png">
+                <img @click="modalLevel=false"
+                     class="img-level-close" src="../assets/img/level/close.png">
+                <div>
+                    <div v-for="(item,index) in levelList"
+                         class="row-level">
+                        <img class="img-num"
+                             :src="item.lock?`../assets/img/level/${index+1}un.png`:`../assets/img/level/${index+1}.png`">
+                        <img v-for="star in item.stars"
+                             class="img-star"
+                             :src="star?'../assets/img/level/star.svg':'../assets/img/level/star0.svg'">
+                    </div>
+                </div>
+            </div>
+        </div>
+    </Modal>
+    <!--    真值表-->
+    <Modal class="z-modal"
+           footer-hide
+           v-model="modalValueTable">
+        <div>
+            <img style="width: 100%;"
+                 src="../assets/img/modal/table.png" alt>
+        </div>
+    </Modal>
+    <!--    tips-->
+    <Modal class="z-modal"
+           footer-hide
+           v-model="modalTips">
+        <div>
+            <img style="width: 100%;"
+                 src="../assets/img/modal/tips.png" alt>
+            <div class="div-yes-no">
+                <img @click="clickTipYes"
+                     style="margin-right: 15px;"
+                     src="../assets/img/modal/yes.png" alt>
+                <img @click="clickTipNo"
+                     style="margin-left: 15px;"
+                     src="../assets/img/modal/no.png" alt>
+            </div>
+        </div>
+    </Modal>
+    <!--    通关对话框-->
+    <Modal class="z-modal"
+           :mask-closable="false"
+           footer-hide
+           v-model="modalCongratulation">
+        <div style="text-align: center">
+            <img :style="congratulationTransform"
+                 style="width: 300px;transition: transform 1s;"
+                 src="../assets/img/congratulations.png">
+        </div>
+    </Modal>
+    <!--    自定义对话框实例-->
+    <Modal class="z-modal"
+           footer-hide
+           v-model="modal1">
+        <div class="modal-custom-body">
+            <img class="m-bg" src="../assets/img/modal/bg.png">
+            <div class="m-content">
+                <p>自定义内容</p>
+                <p>自定义内容</p>
+                <p>自定义内容</p>
+            </div>
+            <div class="row-button">
+                <img @click="clickTipYes"
+                     style="margin-right: 15px;"
+                     src="../assets/img/modal/yes.png" alt>
+                <img @click="clickTipNo"
+                     style="margin-left: 15px;"
+                     src="../assets/img/modal/no.png" alt>
+            </div>
+        </div>
+    </Modal>
+
+    <div class="div-avatar">
+        <img @click="clickAvatar()"
+             :src="username===''?'../assets/img/avatar0.png':'../assets/img/avatar.png'">
+    </div>
+
+    <div class="div-music">
+        <img src="../assets/img/page/music.png">
+    </div>
+    <!--    背景图片-->
+    <img src="../assets/img/bg.jpg" class="bg" alt/>
+    <!--标题 音乐-->
+    <div class="row-title">
+        <img src="../assets/img/page/title.png" alt>
+    </div>
+    <!--    return按钮、next按钮、钟-->
+    <div class="row-action">
+        <div style="width: 28%;"></div>
+        <div class="div-action">
+            <img v-show="curIndex===2||curIndex===3||curIndex===4"
+                 @click="clickReturn"
+                 @mouseenter="returnHover=true"
+                 @mouseleave="returnHover=false"
+                 style="cursor: pointer;"
+                 :src="returnHover?'../assets/img/page/return_hover.png':'../assets/img/page/return.png'" alt>
+            <img v-show="curIndex===1"
+                 @mouseenter="nextHover=true"
+                 @mouseleave="nextHover=false"
+                 style="cursor: pointer;"
+                 :src="nextHover?'../assets/img/page/next_hover.jpg':'../assets/img/page/next.jpg'" alt>
+        </div>
+        <div class="flex-grow"></div>
+        <div v-show="curIndex===0||curIndex===1" class="div-action">
+            <img @click="modalValueTable = true"
+                 style="cursor: pointer;"
+                 src="../assets/img/page/value_table.png" alt>
+        </div>
+        <div v-show="curIndex===2||curIndex===3||curIndex===4">
+            <div class="div-clock">
+                <img class="img-number"
+                     :src="getClockNumberImg(this.clockTime,0)">
+                <img class="img-number"
+                     v-show="this.clockTime>9"
+                     :src="getClockNumberImg(this.clockTime,1)">
+            </div>
+        </div>
+    </div>
+    <!--    左侧选项按钮、电路图-->
+    <div class="div-main">
+        <div class="div-btn">
+            <img @mouseenter="mouseoverBtnItem"
+                 v-for="(item,index) in btnList"
+                 @click="curIndex=index"
+                 :class="{'active':curIndex===index}"
+                 :src="item.img" alt>
+        </div>
+        <div class="flex-grow main-right">
+            <div class="left flex-grow">
+                <div v-show="curIndex===0" id="graph0"
+                     class="logic-graph flex-grow">
+                    <canvas id="canvas0"
+                            :height="canvasSize[0].height"
+                            :width="canvasSize[0].width"></canvas>
+                </div>
+                <div v-show="curIndex===1" id="graph1"
+                     class="logic-graph flex-grow">
+                    <canvas id="canvas1"
+                            :height="canvasSize[1].height"
+                            :width="canvasSize[1].width"></canvas>
+                </div>
+                <div v-show="curIndex===2 ||curIndex===3" id="graph23"
+                     class="logic-graph flex-grow">
+                    <div style="display: flex;flex-direction: column">
+                        <canvas id="canvas20"
+                                :style="{marginTop:canvasGapY+'px',marginLeft:canvasGapX+'px'}"
+                                :height="canvasSize[2].height"
+                                :width="canvasSize[2].width"></canvas>
+                        <canvas id="canvas21"
+                                :style="{marginTop:canvasGapY+'px',marginBottom:canvasGapY+'px',marginLeft:canvasGapX+'px'}"
+                                :height="canvasSize[2].height"
+                                :width="canvasSize[2].width"></canvas>
+                    </div>
+                    <div style="display: flex;align-items: center;">
+                        <canvas id="canvas22"
+                                :style="{marginLeft:canvasGapX+'px'}"
+                                :height="canvasSize[2].height"
+                                :width="canvasSize[2].width"></canvas>
+                    </div>
+                </div>
+                <div v-show="curIndex===4" id="graph4"
+                     class="logic-graph flex-grow">
+                    <canvas id="canvas4"
+                            :height="canvasSize[4].height"
+                            :width="canvasSize[4].width"></canvas>
+                </div>
+                <div v-show="curIndex===0||curIndex===4" class="zero-one">
+                    <img :class="{'select-num':selectNum === '0'}"
+                         @click="chooseNum('0')" src="../assets/img/page/0.png" alt>
+                    <img :class="{'select-num':selectNum === '1'}"
+                         @click="chooseNum('1')" src="../assets/img/page/1.png" alt>
+                </div>
+            </div>
+            <div class="right">
+                <div v-for="logic in logicLegends"
+                     class="logic-legend">
+                    <img :class="{'select-logic':selectLogic === logic}"
+                         @click="chooseLogic(logic)"
+                         :src="`../assets/img/page/${logic}.png`" alt>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+</div>
+</body>
+
+<script>
+    const app = new Vue({
+        el: '#app',
+        data: {
+            modal1: false,
+            modalTips: false,
+            modalValueTable: false,
+            modalLevel: false,
+            modalCongratulation: false,
+            levelList: [
+                {lock: false, stars: [true, true, false]},
+                {lock: true, stars: [false, false, false]},
+                {lock: true, stars: [false, false, false]},
+                {lock: true, stars: [false, false, false]},
+                {lock: true, stars: [false, false, false]},
+                {lock: true, stars: [false, false, false]},
+                {lock: true, stars: [false, false, false]},
+            ],
+            username: '',
+            returnHover: false,
+            nextHover: false,
+            canvasGapX: 25,
+            canvasGapY: 10,
+            clockTime: 60,
+            tickId: null,
+            curIndex: 5,
+            logicLegends: [
+                'XOR',
+                'NOR',
+                'OR',
+                'NAND',
+                'AND',
+            ],
+            btnList: [
+                {
+                    img: '../assets/img/page/what.png',
+                    isActive: false,
+                }, {
+                    img: '../assets/img/page/how.png',
+                    isActive: false,
+                }, {
+                    img: '../assets/img/page/easy.png',
+                    isActive: false,
+                }, {
+                    img: '../assets/img/page/medium.png',
+                    isActive: false,
+                }, {
+                    img: '../assets/img/page/hard.png',
+                    isActive: false,
+                },
+            ],
+            canvasSize: [
+                {
+                    width: '',
+                    height: '',
+                }, {
+                    width: '',
+                    height: '',
+                }, {
+                    width: '10',
+                    height: '5',
+                }, {
+                    width: '10',
+                    height: '5',
+                }, {
+                    width: '',
+                    height: '',
+                },
+            ],
+            stage: [{}, {}, [{}, {}, {}], [{}, {}, {}], {}],
+            colorRect: '#ffe6be',
+            colorRectHover: '#e2c9aa',
+            colorLine: '#f19049',
+
+            shadowHover: '#aaaaaa',
+            shadowThis: '#3367d6',
+            shadowError: '#f00',
+            shadowRight: '#1aa260',
+
+            queue: null,
+            logicTreeWhat: [
+                [{val: '0'}, {val: '1'}], [{val: 'AND', logic: true}], [{val: '1'}]
+            ],
+            logicTreeHow: [
+                [{val: '0'}, {val: '0'}], [{val: '?', logic: true}], [{val: '1'}]
+            ],
+            logicTreeEasy: [
+                [[{val: '1',}, {val: '1',}],
+                    [{val: '?', logic: true, edit: true}],
+                    [{val: '1'}]],
+                [[{val: '0'}, {val: '1'}], [{val: '?', logic: true, edit: true}], [{val: '1',}]],
+                [[{val: '0'}, {val: '1'}], [{val: '?', logic: true, edit: true}], [{val: '1'}]],
+            ],
+            logicTreeMedium: [
+                [[{val: '1',}, {val: '1',}],
+                    [{val: '?', logic: true, edit: true}],
+                    [{val: '1'}]],
+                [[{val: '0'}, {val: '1'}], [{val: '?', logic: true, edit: true}], [{val: '1',}]],
+                [[{val: '0'}, {val: '1'}], [{val: '?', logic: true, edit: true}], [{val: '1'}]],
+            ],
+            logicTreeHard: [
+                [{val: '?', edit: true}, {val: '0'}, {val: '0'}, {val: '0'}, {val: '0'}, {val: '0'}],
+                [{val: 'OR', logic: true}, {val: '?', logic: true, edit: true}, {val: 'AND', logic: true}],
+                [{val: '0'}, {val: '0'}, {val: '0'}],
+                [{val: 'AND', logic: true}, {val: 'OR', logic: true}],
+                [{val: '?', edit: true,}, {val: '?', edit: true,}],
+                [{val: 'AND', logic: true}],
+                [{val: '0'}],
+            ],
+            curNode: null,
+            curShape: null,
+            selectNum: null,
+            selectLogic: null,
+            congratulationTransform: {
+                transform: 'translateY(0)'
+            }
+        },
+        watch: {
+            curIndex() {
+                setTimeout(() => {
+                    this.setupCanvasSize();
+                    this.drawLogicTree(this.curIndex);
+                }, 1);
+                if (this.curIndex === 2 || this.curIndex === 3 || this.curIndex === 4) {
+                    this.startTick(60);
+                    createjs.Sound.play("ready");
+                }
+            },
+            modalValueTable() {
+                if (this.modalValueTable)
+                    createjs.Sound.play("think");
+            },
+            modalCongratulation() {
+                if (this.modalCongratulation) {
+                    setTimeout(() => {
+                        app.congratulationTransform = {
+                            transform: 'translateY(100vh)'
+                        }
+                    }, 1500);
+                    setTimeout(() => {
+                        app.modalLevel = true;
+                        app.modalCongratulation = false;
+                        app.congratulationTransform = {
+                            transform: 'translateY(0)'
+                        }
+                    }, 2500);
+                }
+            }
+        },
+        mounted() {
+            if (localStorage.getItem('curIndex'))
+                this.curIndex = parseInt(localStorage.getItem('curIndex'));
+            this.username = localStorage.getItem('username');
+            this.queue = new createjs.LoadQueue();
+            this.queue.installPlugin(createjs.Sound);
+            this.queue.on("complete", handleComplete, this);
+            this.queue.loadManifest([
+                {id: "0", src: '../assets/img/graph/0.png'},
+                {id: "1", src: '../assets/img/graph/1.png'},
+                {id: "AND", src: '../assets/img/graph/AND.png'},
+                {id: "NAND", src: '../assets/img/graph/NAND.png'},
+                {id: "NOR", src: '../assets/img/graph/NOR.png'},
+                {id: "OR", src: '../assets/img/graph/OR.png'},
+                {id: "XOR", src: '../assets/img/graph/XOR.png'},
+                {id: "?", src: '../assets/img/graph/Q.png'},
+                //音乐
+                {id: "bg", src: '../assets/mp3/bg.mp3'},
+                {id: "fail", src: '../assets/mp3/matchFail.mp3'},
+                {id: "success", src: '../assets/mp3/matchSuccess.mp3'},
+                {id: "victory", src: '../assets/mp3/victory.mp3'},
+                {id: "mover", src: '../assets/mp3/mover.mp3'},
+                {id: "timeout", src: '../assets/mp3/timeout.mp3'},
+                {id: "think", src: '../assets/mp3/think.mp3'},
+                {id: "ready", src: '../assets/mp3/ready.mp3'},
+            ]);
+
+            function handleComplete() {
+                app.setupCanvasSize();
+                app.drawLogicTree(this.curIndex);
+                createjs.Sound.play("bg", {loop: -1});
+            }
+
+            window.onresize = () => {
+                app.setupCanvasSize();
+                this.drawLogicTree(this.curIndex);
+            };
+        },
+        methods: {
+            goToNextLevel() {
+                this.modalCongratulation = true;
+            },
+            fillBlank(logicTree) {
+                if (!this.curNode.edit)
+                    return;
+                if (this.curNode.logic) {
+                    if (!this.selectLogic)
+                        return;
+                    this.curNode.val = this.selectLogic;
+                    this.judgeLogicTree(this.curIndex, logicTree);
+                    this.updateLogicTree(this.curIndex);
+                }
+                if (!this.curNode.logic) {
+                    if (!this.selectNum)
+                        return;
+                    this.curNode.val = this.selectNum;
+                    this.judgeLogicTree(this.curIndex, logicTree);
+                    this.updateLogicTree(this.curIndex);
+                }
+            },
+            judgeLogicTree(index, logicTree) {
+                if (logicTree.length === 3) {
+                    let logicTreeList = this.logicTreeEasy;
+                    if (index === 3)
+                        logicTreeList = this.logicTreeMedium;
+                    let allRight = true;
+                    for (let tree of logicTreeList) {
+                        let num1 = tree[0][0];
+                        let num2 = tree[0][1];
+                        let num3 = tree[2][0];
+                        let op = tree[1][0];
+                        if (this.operate(op.val, num1.val, num2.val) === num3.val) {
+                            for (let item of [num1, num2, num3, op])
+                                item.right = true;
+                        } else {
+                            for (let item of [num1, num2, num3, op])
+                                item.right = false;
+                            allRight = false;
+                        }
+                    }
+                    if (allRight) {
+                        createjs.Sound.play("victory");
+                        this.goToNextLevel();
+                    } else {
+                        this.curNode.right ? createjs.Sound.play("success") : createjs.Sound.play("fail");
+                    }
+                } else if (logicTree.length === 7) {
+                    let allRight = true;
+                    for (let i = 0; i < logicTree.length; i++, i++) {
+                        let treeLevel = logicTree[i];
+                        if (i === 0) {
+                            for (let j = 0; j < treeLevel.length; j++, j++) {
+                                let num1 = treeLevel[j];
+                                let num2 = treeLevel[j + 1];
+                                let num3 = logicTree[i + 2][j / 2];
+                                let op = logicTree[i + 1][j / 2];
+                                if (this.operate(op.val, num1.val, num2.val) === num3.val) {
+                                    for (let item of [num1, num2, num3, op])
+                                        item.right = true;
+                                } else {
+                                    allRight = false;
+                                    for (let item of [num1, num2, num3, op])
+                                        item.right = false;
+                                }
+                            }
+                            if (!allRight) break;
+                        } else if (i === 2) {
+                            for (let j = 1; j < treeLevel.length; j++) {
+                                let num1 = treeLevel[j - 1];
+                                let num2 = treeLevel[j];
+                                let num3 = logicTree[i + 2][j - 1];
+                                let op = logicTree[i + 1][j - 1];
+                                if (this.operate(op.val, num1.val, num2.val) === num3.val) {
+                                    for (let item of [num1, num2, num3, op])
+                                        item.right = true;
+                                } else {
+                                    allRight = false;
+                                    for (let item of [num1, num2, num3, op])
+                                        item.right = false;
+                                }
+                            }
+                            if (!allRight) break;
+                        } else if (i === 4) {
+                            let num1 = treeLevel[0];
+                            let num2 = treeLevel[1];
+                            let num3 = logicTree[i + 2][0];
+                            let op = logicTree[i + 1][0];
+                            if (this.operate(op.val, num1.val, num2.val) === num3.val) {
+                                for (let item of [num1, num2, num3, op])
+                                    item.right = true;
+                            } else {
+                                allRight = false;
+                                for (let item of [num1, num2, num3, op])
+                                    item.right = false;
+                            }
+                        }
+                    }
+                    if (allRight) {
+                        createjs.Sound.play("victory");
+                        this.goToNextLevel();
+                    } else {
+                        this.curNode.right ? createjs.Sound.play("success") : createjs.Sound.play("fail");
+                    }
+                }
+            },
+            setupCanvasSize() {
+                let domList = [
+                    document.getElementById('graph0'),
+                    document.getElementById('graph1'),
+                    document.getElementById('graph23'),
+                    document.getElementById('graph23'),
+                    document.getElementById('graph4'),
+                ];
+                for (let i in domList) {
+                    let width = domList[i].clientWidth;
+                    let height = domList[i].clientHeight;
+                    if (i === '2' || i === '3') {
+                        //-2去掉边框宽度
+                        width = (width - 3 * this.canvasGapX) / 2 - 2;
+                        height = (height - 3 * this.canvasGapY) / 2 - 2;
+                        //不显示时，高宽会变负数，导致canvas变成默认大小
+                        if (width < 0 || height < 0)
+                            continue;
+                    }
+                    this.canvasSize[i].width = width;
+                    this.canvasSize[i].height = height;
+                }
+            },
+            _drawLogicTree3Elements(logicTree, stage, cW, cH) {
+                stage.removeAllChildren();
+                stage.clear();
+                let gap = cH * 0.05;
+                let rect1H = (cH - gap * 3) / 2;
+                let rect1W = rect1H * 1.75;
+                let rect2H = cH - gap * 2;
+                let rect2W = rect2H / 1.75;
+                let strokeW = rect1H * 0.18;
+                //线段中点的X坐标
+                let centerX = (cW - 2 * gap - rect1W - rect2W) / 2 + gap + rect1W;
+                let centerY = cH / 2;
+                let rect1 = new createjs.Shape();
+                rect1.graphics
+                    .f(this.colorRect).rr(gap, gap, rect1W, rect1H, 5);
+                let rect2 = new createjs.Shape();
+                rect2.graphics
+                    .f(this.colorRect)
+                    .rr(gap, rect1H + gap * 2, rect1W, rect1H, 5);
+                let rect3 = new createjs.Shape();
+                rect3.graphics
+                    .f(this.colorRect)
+                    .rr(cW - gap - rect2W, gap, rect2W, rect2H, 5);
+                let mtPosY = gap + rect1H / 2;
+                let qtPosY = mtPosY + strokeW;
+                let line = new createjs.Shape();
+                line.graphics.s(this.colorLine)
+                    .ss(strokeW)
+                    .mt(gap, mtPosY)
+                    .lt(centerX - strokeW, mtPosY)
+                    .qt(centerX, mtPosY, centerX, qtPosY)
+                    .mt(gap, cH - mtPosY)
+                    .lt(centerX - strokeW, cH - mtPosY)
+                    .qt(centerX, cH - mtPosY, centerX, cH - qtPosY)
+                    .lt(centerX, qtPosY)
+                    .mt(centerX, centerY)
+                    .lt(cW - gap, centerY);
+                let img1 = new createjs.Bitmap(this.queue.getResult(logicTree[0][0].val));
+                let wh = this.scaleBitmap(img1, rect1H);
+                img1.x = gap + rect1W / 2 - wh[0] / 2;
+                img1.y = gap + rect1H / 2 - wh[1] / 2;
+
+                let img2 = new createjs.Bitmap(this.queue.getResult(logicTree[0][1].val));
+                wh = this.scaleBitmap(img2, rect1H);
+                img2.x = gap + rect1W / 2 - wh[0] / 2;
+                img2.y = cH - gap - rect1H / 2 - wh[1] / 2;
+
+                let img4 = new createjs.Bitmap(this.queue.getResult(logicTree[2][0].val));
+                wh = this.scaleBitmap(img4, rect1H);
+                img4.x = cW - gap - rect2W / 2 - wh[0] / 2;
+                img4.y = gap + rect2H / 2 - wh[1] / 2;
+
+                let img3 = new createjs.Bitmap(this.queue.getResult(logicTree[1][0].val));
+                wh = this.scaleBitmap(img3, rect1H, true);
+                img3.x = centerX - wh[0] / 2;
+                img3.y = centerY - wh[1] / 2;
+
+                let treeNodeList = [logicTree[0][0], logicTree[0][1], logicTree[1][0], logicTree[2][0]];
+                let objList = [rect1, rect2, img3, rect3];
+                for (let i in objList) {
+                    let obj = objList[i];
+                    let node = treeNodeList[i];
+                    if (node.current) {
+                        this.curNode = node;
+                    }
+                    app.setShadow(node, obj);
+                    obj.on('mouseover', evt => {
+                        app.setShadow(node, obj, true);
+                    });
+                    obj.on('mouseout', evt => {
+                        app.setShadow(node, obj);
+                        createjs.Sound.play("mover");
+                    });
+                    obj.on('click', evt => {
+                        app.curNode = node;
+                        app.fillBlank(logicTree);
+                    });
+                }
+                for (let child of [line, rect1, rect2, rect3, img1, img2, img3, img4])
+                    stage.addChild(child);
+            },
+            _drawLogicTreeMoreElements(logicTree, stage, cW, cH) {
+                stage.removeAllChildren();
+                stage.clear();
+                let _this = this;
+                //图片最左结点数量
+                let leafCount = logicTree[0].length;
+                //数字列数目
+                let numColCount = Math.ceil(logicTree.length / 2);
+                let gap = cH * 0.04;
+                let rectH = (cH - gap * (leafCount + 1)) / leafCount;
+                let rectW = rectH * 1.75;
+                let strokeW = rectH * 0.2;
+                //水平两个数字之间线段的水平距离
+                let eachLineWidth = (cW - 2 * gap - numColCount * rectW) / (numColCount - 1);
+                let firstLineY = gap + rectH / 2;
+                let lineYList = [];
+                for (let i in logicTree[0]) {
+                    lineYList.push(firstLineY);
+                    firstLineY += gap + rectH;
+                }
+                let res = {
+                    x: gap,
+                    y: lineYList
+                };
+                for (let i = 0; i < logicTree.length; i++, i++) {
+                    res = _drawNumberLevel(logicTree[i], res.x, res.y, logicTree[i + 1]);
+                }
+
+                function _drawNumberLevel(treeLevel, lineX, lineYList, logicList) {
+                    let newLineYList = [];
+                    let newlineX = -1;
+                    let newlineY = -1;
+                    let x = lineX;
+                    let isEven = treeLevel.length % 2 === 0;
+                    //遍历数字列的每一个数字
+                    for (let i = 0; i < treeLevel.length; i++) {
+                        let y = lineYList[i] - rectH / 2;
+                        let lineY = lineYList[i];
+                        let nextLineY = lineYList[i + 1];
+                        let node = treeLevel[i];
+                        let rect = new createjs.Shape();
+                        rect.graphics
+                            .f(_this.colorRect).rr(x, y, rectW, rectH, 5);
+                        app.setShadow(node, rect);
+                        rect.on('mouseover', evt => {
+                            app.setShadow(node, rect, true);
+                        });
+                        rect.on('mouseout', evt => {
+                            app.setShadow(node, rect);
+                            createjs.Sound.play("mover");
+                        });
+                        rect.on('click', evt => {
+                            app.curNode = node;
+                            app.fillBlank(logicTree)
+                        });
+                        let imgNum = new createjs.Bitmap(_this.queue.getResult(node.val));
+                        let wh = app.scaleBitmap(imgNum, rectH);
+                        let imgX = lineX + rectW / 2 - wh[0] / 2;
+                        let imgY = lineYList[i] - wh[1] / 2;
+                        imgNum.x = imgX;
+                        imgNum.y = imgY;
+                        if ((isEven && i % 2 === 0) || (!isEven && i !== treeLevel.length - 1)) {
+                            //每对数字第一个画线
+                            let line = new createjs.Shape();
+                            newlineX = lineX + rectW + eachLineWidth;
+                            newlineY = (lineY + nextLineY) / 2;
+                            line.graphics
+                                .s(_this.colorLine)
+                                .ss(strokeW)
+                                .moveTo(lineX, lineY)
+                                .lineTo(lineX + rectW + eachLineWidth / 2 - strokeW, lineY)
+                                .qt(lineX + rectW + eachLineWidth / 2, lineY, lineX + rectW + eachLineWidth / 2, lineY + strokeW)
+                                .moveTo(lineX, nextLineY)
+                                .lineTo(lineX + rectW + eachLineWidth / 2 - strokeW, nextLineY)
+                                .qt(lineX + rectW + eachLineWidth / 2, nextLineY, lineX + rectW + eachLineWidth / 2, nextLineY - strokeW)
+                                .lt(lineX + rectW + eachLineWidth / 2, lineY + strokeW)
+                                //合并线
+                                .mt(lineX + rectW + eachLineWidth / 2, newlineY)
+                                .lt(newlineX, newlineY);
+                            newLineYList.push(newlineY);
+                            stage.addChild(line);
+                            lineY += 2 * (rectH + gap);
+                            //画逻辑符号
+                            let logicNode = logicList[Math.floor(i / 2)];
+                            if (!isEven)
+                                logicNode = logicList[i];
+                            let imgLogic = new createjs.Bitmap(_this.queue.getResult(logicNode.val));
+                            let wh = app.scaleBitmap(imgLogic, rectH, true);
+                            imgLogic.x = newlineX - eachLineWidth / 2 - wh[0] / 2;
+                            imgLogic.y = newlineY - wh[1] / 2;
+                            app.setShadow(logicNode, imgLogic);
+                            imgLogic.on("mouseover", evt => {
+                                app.setShadow(logicNode, imgLogic, true);
+                            });
+                            imgLogic.on("mouseout", evt => {
+                                app.setShadow(logicNode, imgLogic);
+                                createjs.Sound.play("mover");
+                            });
+                            imgLogic.on('click', evt => {
+                                app.curNode = logicNode;
+                                app.fillBlank(logicTree);
+                            });
+                            stage.addChild(imgLogic);
+                        }
+                        stage.addChild(rect);
+                        stage.addChild(imgNum);
+                        y += rectH + gap;
+                        imgY += rectH + gap;
+                    }
+                    return {
+                        x: newlineX,
+                        y: newLineYList
+                    };
+                }
+            },
+            updateLogicTree(index) {
+                let stageInEasyMedium = this.stage[2];
+                let logicTree = [this.logicTreeWhat, this.logicTreeHow,
+                    this.logicTreeEasy, this.logicTreeMedium, this.logicTreeHard][index];
+                let stage = this.stage[index];
+                let cW = this.canvasSize[index].width;
+                let cH = this.canvasSize[index].height;
+                if (index === 2 || index === 3) {
+                    cW = this.easySize.W;
+                    cH = this.easySize.H;
+                    for (let i in stageInEasyMedium) {
+                        if (logicTree[i].length === 3)
+                            this._drawLogicTreeOnlyBox(logicTree[i], stageInEasyMedium[i], cW, cH);
+                    }
+                } else {
+                    if (logicTree.length === 3)
+                        this._drawLogicTree3Elements(logicTree, stage, cW, cH);
+                    else
+                        this._drawLogicTreeMoreElements(logicTree, stage, cW, cH);
+                }
+            },
+
+            drawLogicTree(index) {
+                let stageInEasyMedium = [new createjs.Stage("canvas20"),
+                    new createjs.Stage("canvas21"),
+                    new createjs.Stage("canvas22")];
+                this.stage = [new createjs.Stage("canvas0"),
+                    new createjs.Stage("canvas1"),
+                    stageInEasyMedium,
+                    stageInEasyMedium,
+                    new createjs.Stage("canvas4"),
+                ];
+                createjs.Ticker.framerate = 60;
+                for (let stage of [this.stage[0], this.stage[1], this.stage[4], ...stageInEasyMedium]) {
+                    createjs.Ticker.addEventListener("tick", stage);
+                    stage.enableMouseOver(10);
+                }
+                this.updateLogicTree(index);
+            },
+
+            //缩放bitmap返回缩放后的width，height
+            scaleBitmap(bitmap, rectH, isLogic) {
+                let ratio = 0.5;
+                if (isLogic)
+                    ratio = 0.7;
+                let numTrueH = bitmap.getBounds().height;
+                let numScale = rectH * ratio / numTrueH;
+                bitmap.scaleX = bitmap.scaleY = numScale;
+                return [bitmap.getTransformedBounds().width, bitmap.getTransformedBounds().height]
+            },
+
+            setShadow(node, shape, hover) {
+                if (node.edit)
+                    if (node.right)
+                        shape.shadow = new createjs.Shadow(app.shadowRight, 0, 0, 5);
+                    else
+                        shape.shadow = new createjs.Shadow(app.shadowError, 0, 0, 5);
+                else
+                    shape.shadow = null;
+                if (node.current)
+                    shape.shadow = new createjs.Shadow(app.shadowThis, 0, 0, 5);
+                if (hover)
+                    if (node.edit)
+                        shape.shadow = new createjs.Shadow(app.shadowThis, 0, 0, 5);
+                    else
+                        shape.shadow = new createjs.Shadow(app.shadowHover, 0, 0, 5);
+            },
+
+            clickReturn() {
+
+            },
+            clickAvatar() {
+                this.modalLevel = true;
+            },
+            chooseLogic(logic) {
+                this.selectNum = '';
+                this.selectLogic = logic;
+                createjs.Sound.play("mover");
+            },
+            chooseNum(num) {
+                this.selectNum = num;
+                this.selectLogic = '';
+                createjs.Sound.play("mover");
+            },
+            startTick(time) {
+                this.clockTime = time;
+                clearInterval(this.tickId);
+                this.tickId = setInterval(() => {
+                    this.clockTime--;
+                    if (this.clockTime === 0) {
+                        clearInterval(this.tickId);
+                        app.onTimeOut();
+                    }
+
+                }, 1000);
+            },
+            onTimeOut() {
+                createjs.Sound.play("timeout");
+            },
+            endTick() {
+                clearInterval(this.tickId);
+            },
+            //获取闹钟数字
+            getClockNumberImg(time, index) {
+                let baseUrl = '../assets/img/num/';
+                let strTime = time.toString();
+                if (strTime.length === 1)
+                    if (index === 0)
+                        return baseUrl + strTime[0] + '.png';
+                    else
+                        return '#';
+                else
+                    return baseUrl + strTime[index] + '.png';
+            },
+            operate(op, num1, num2) {
+                if (num1 === '?' || op === '?' || num1 === '?')
+                    return false;
+                switch (op) {
+                    case 'AND':
+                        return and(num1, num2);
+                    case 'OR':
+                        return or(num1, num2);
+                    case 'NAND':
+                        return nand(num1, num2);
+                    case 'XOR':
+                        return xor(num1, num2);
+                    case 'NOR':
+                        return nor(num1, num2);
+                }
+
+                function and(num1, num2) {
+                    if (num1 === '1' && num2 === '1')
+                        return '1';
+                    return '0';
+                }
+
+                function or(num1, num2) {
+                    if (num1 === '0' && num2 === '0')
+                        return '0';
+                    return '1';
+                }
+
+                function nand(num1, num2) {
+                    if (num1 === '1' && num2 === '1')
+                        return '0';
+                    return '1';
+                }
+
+                function nor(num1, num2) {
+                    if (num1 === '0' && num2 === '0')
+                        return '1';
+                    return '0';
+                }
+
+                function xor(num1, num2) {
+                    if (num1 === '0' && num2 === '0')
+                        return '0';
+                    if (num1 === '1' && num2 === '1')
+                        return '0';
+                    return '1';
+                }
+
+                return false;
+            },
+            mouseoverBtnItem() {
+                createjs.Sound.play("mover");
+            },
+            clickTipYes() {
+                //自定义对话框YES按钮点击事件
+                this.modal1 = false;
+            },
+            clickTipNo() {
+                //自定义对话框NO按钮点击事件
+                this.modal1 = false;
+            },
+        },
+    })
+</script>
+
+<style>
+    .modal-custom-body {
+        position: relative;
+    }
+
+    .modal-custom-body .m-bg {
+        width: 100%;
+        position: absolute;
+        top: 0;
+        left: 0;
+        z-index: -1;
+    }
+
+    .modal-custom-body .m-content {
+        width: 80%;
+        position: absolute;
+        top: 90px;
+        left: 40px;
+    }
+
+    .modal-custom-body .row-button {
+        width: 100%;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+    }
+
+    .modal-custom-body .row-button img {
+        margin-top: 170px;
+        width: 80px;
+        cursor: pointer;
+    }
+
+    .z-modal .ivu-modal-content {
+        background: transparent;
+        box-shadow: none;
+    }
+
+    .z-modal .ivu-modal-close {
+        display: none;
+    }
+
+    .row-level {
+        display: flex;
+        justify-content: space-evenly;
+        align-items: center;
+        padding: 3px 0;
+    }
+
+    .row-level .img-num {
+        width: 36px;
+        height: 40px;
+    }
+
+    .row-level .img-star {
+        width: 32px;
+    }
+
+    .level-body {
+        display: flex;
+        justify-content: center;
+        margin-top: -3vh;
+    }
+
+    .level-content {
+        position: relative;
+    }
+
+    .level-bg {
+        z-index: -1;
+        position: absolute;
+        width: 280px;
+        height: 420px;
+    }
+
+    .img-ribbon {
+        width: 280px;
+        height: 80px;
+    }
+
+    .img-level-close {
+        position: absolute;
+        top: 10px;
+        right: 10px;
+        width: 24px;
+        height: 24px;
+        cursor: pointer;
+    }
+
+    .div-avatar {
+        position: fixed;
+        left: 24px;
+        top: 24px;
+    }
+
+    .div-avatar img {
+        width: 36px;
+        cursor: pointer;
+    }
+
+    .div-music {
+        position: fixed;
+        right: 20px;
+        top: 20px;
+    }
+
+    .div-music img {
+        width: 50px;
+    }
+
+    .select-logic {
+        border: 2px solid #2b85e4;
+        border-radius: 5px;
+    }
+
+    .select-num {
+        border: 2px solid #2b85e4;
+        border-radius: 5px;
+    }
+
+    .div-clock {
+        width: 50px;
+        height: 50px;
+        background: url("../assets/img/page/clock.png");
+        background-size: cover;
+        text-align: center;
+        padding-top: 16px;
+        margin-bottom: 5px;
+    }
+
+    .div-clock .img-number {
+        position: relative;
+        height: 22px;
+        width: 16px;
+    }
+
+    .zero-one {
+        text-align: center;
+    }
+
+    .zero-one img {
+        height: 8vh;
+        margin-left: 20px;
+        margin-right: 20px;
+        cursor: pointer;
+    }
+
+    .logic-legend {
+        text-align: center;
+    }
+
+    .logic-legend img {
+        width: 80%;
+        cursor: pointer;
+    }
+
+    .main-right {
+        background: #d3f0f4cc;
+        border-radius: 5px;
+        display: flex;
+        height: 70vh;
+    }
+
+    .main-right .left {
+        display: flex;
+        flex-direction: column;
+    }
+
+    .main-right .right {
+        width: 7vw;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-evenly;
+    }
+
+    .logic-graph {
+        background: white;
+        display: flex;
+        margin: 20px 40px 10px 40px;
+        border: 1px #9acad4 solid;
+        border-radius: 5px;
+    }
+
+    #graph1 {
+        margin: 50px 80px;
+    }
+
+    #graph23 {
+        border: none;
+        margin: 0;
+        background: transparent;
+    }
+
+    #graph23 canvas {
+        background: white;
+        border: 1px #9acad4 solid;
+        border-radius: 5px;
+    }
+
+    .div-btn {
+        flex-shrink: 0;
+        width: 28%;
+        padding-left: 2%;
+        padding-right: 2%;
+        box-sizing: border-box;
+    }
+
+    .div-btn img.active {
+        width: 100%;
+    }
+
+    .div-btn img {
+        width: 85%;
+        transition: all 0.2s;
+        cursor: pointer;
+    }
+
+    .div-btn img:hover {
+        width: 100%;
+    }
+
+    .div-main {
+        display: flex;
+        padding-right: 5%;
+    }
+
+
+    .row-title {
+        text-align: center;
+    }
+
+    .row-title img {
+        margin-top: 2vh;
+        width: 50%;
+    }
+
+    .row-action {
+        margin-top: -10px;
+        align-items: center;
+        display: flex;
+        padding-right: 5%;
+    }
+
+    .div-action {
+        width: 10%;
+    }
+
+    .div-action img {
+        width: 100%;
+    }
+
+    .div-yes-no {
+        margin-top: -60px;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+    }
+
+    .div-yes-no img {
+        cursor: pointer;
+        width: 80px;
+        box-sizing: border-box;
+    }
+</style>
+</html>

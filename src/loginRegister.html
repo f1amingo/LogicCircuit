@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Login</title>
+    <link rel="stylesheet" type="text/css" href="../assets/css/basic.css"/>
+    <!--    <script src="../assets/js/vue.js"></script>-->
+    <script src="../assets/js/vue.min.js"></script>
+    <link rel="stylesheet" href="../assets/css/iview.css">
+    <script src="../assets/js/iview.min.js"></script>
+</head>
+<body style="overflow: hidden;">
+<div id="app">
+    <img src="../assets/img/bg.jpg" class="bg" alt/>
+    <div class="title">
+        <img src="../assets/img/home/title.png" alt="title">
+    </div>
+    <div style="display: flex;justify-content: center;padding-top: 8vh">
+        <div
+                :style="leftOut"
+                :class="{'left-out':title==='Register'}"
+                @transitionend="transitionFinished"
+                class="input-panel">
+            <div class="row-input">
+                <i-input v-model="username"
+                         prefix="md-contact"
+                         placeholder="username"
+                         clearable
+                         style="width: 200px"/>
+            </div>
+            <div class="row-input">
+                <i-input v-model="password"
+                         prefix="md-lock"
+                         placeholder="password"
+                         clearable
+                         type="password"
+                         style="width: 200px"/>
+            </div>
+            <i-button :loading="isDoing"
+                      @click="clickLogin()"
+                      class="login-btn" long
+                      type="primary" shape="circle">{{title}}
+            </i-button>
+            <div style="text-align: center;margin-top: 10px;">
+                <a @click="clickRegister()">{{title==='Login'?'Register':'Login'}}</a>
+            </div>
+        </div>
+    </div>
+</div>
+</body>
+<script>
+    const app = new Vue({
+        el: '#app',
+        data: {
+            username: '',
+            password: '',
+            title: 'Login',
+            leftOut: {
+                transform: 'translateY(0vw)'
+            },
+            isAnimationEnd: true,
+            isDoing: false,
+        },
+        mounted() {
+            document.title = this.title;
+        },
+        methods: {
+            transitionFinished(e) {
+                if (e.propertyName === 'transform') {
+                    this.isAnimationEnd = !this.isAnimationEnd;
+                    this.leftOut = {
+                        transform: 'translateY(0)'
+                    };
+                    if (this.isAnimationEnd) {
+                        if (this.title === 'Login') {
+                            this.title = 'Register';
+                        } else {
+                            this.title = 'Login';
+                        }
+                        document.title = this.title;
+                    }
+                }
+            },
+            clickLogin() {
+                console.log(this.username, this.password);
+                if (this.username.trim() === '' || this.password.trim() === '') {
+                    this.$Message.error('username or password should not be empty');
+                    return;
+                }
+                if (this.title === 'Login') {
+                    console.log(`登录，用户名：${this.username}，密码：${this.password}`);
+                    this.isDoing = true;
+                    setTimeout(() => {
+                        this.isDoing = false;
+                        localStorage.setItem('username', this.username);
+                        localStorage.setItem('password', this.password);
+                        window.location.href = "./home.html";
+                    }, 1000)
+                } else {
+                    console.log(`注册，用户名：${this.username}，密码：${this.password}`);
+                    this.leftOut = {
+                        transform: 'translateY(-80vh)'
+                    };
+                }
+            },
+            clickRegister() {
+                this.leftOut = {
+                    transform: 'translateY(-80vh)'
+                };
+            }
+        },
+    })
+</script>
+<style>
+    .login-btn {
+        background-color: #ffc000;
+        border-color: #ffc000;
+    }
+
+    .login-btn:hover {
+        background-color: #dda600;
+        border-color: #dda600;
+    }
+
+    .title {
+        text-align: center;
+        margin-bottom: -8vh;
+    }
+
+    .title img {
+        width: 80%;
+        padding-left: 10%;
+        padding-right: 10%;
+        padding-top: 5vh;
+    }
+
+    .input-panel {
+        transition: transform .5s;
+        background: rgba(16, 97, 114, 0.67);
+        padding: 25px;
+        border-radius: 10px;
+        box-shadow: 0 0 10px #6666;
+    }
+
+    .row-input {
+        margin-bottom: 20px;
+        text-align: center;
+    }
+</style>
+</html>

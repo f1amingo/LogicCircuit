@@ -1,0 +1,1575 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>HAPPY ELIMINATING</title>
+    <link rel="stylesheet" type="text/css" href="../assets/css/basic.css"/>
+    <!--    <script src="../assets/js/vue.js"></script>-->
+    <script src="../assets/js/vue.min.js"></script>
+    <!-- import stylesheet -->
+    <link rel="stylesheet" href="../assets/css/iview.css">
+    <!-- import iView -->
+    <script src="../assets/js/iview.min.js"></script>
+    <script src="../assets/js/createjs.min.js"></script>
+    <script src="../assets/js/preloadjs.min.js"></script>
+    <script src="../assets/js/tweenjs.min.js"></script>
+    <script src="../assets/js/soundjs.min.js"></script>
+</head>
+<body>
+<div id="app">
+    <!--    关卡对话框-->
+    <Modal class="z-modal"
+           footer-hide
+           v-model="modalLevel">
+        <div class="level-body">
+            <div class="level-content">
+                <img class="level-bg" src="../assets/img/level/bg.png">
+                <img class="img-ribbon" src="../assets/img/level/ribbon.png">
+                <img @click="modalLevel=false"
+                     class="img-level-close" src="../assets/img/level/close.png">
+                <div>
+                    <div v-for="(item,index) in levelList"
+                         class="row-level">
+                        <img class="img-num"
+                             :src="item.lock?`../assets/img/level/${index+1}un.png`:`../assets/img/level/${index+1}.png`">
+                        <img v-for="star in item.stars"
+                             class="img-star"
+                             :src="star?'../assets/img/level/star.svg':'../assets/img/level/star0.svg'">
+                    </div>
+                </div>
+            </div>
+        </div>
+    </Modal>
+    <!--    真值表-->
+    <Modal class="z-modal"
+           footer-hide
+           v-model="modalValueTable">
+        <div>
+            <img style="width: 100%;"
+                 src="../assets/img/modal/table.png" alt>
+        </div>
+    </Modal>
+    <!--    tips-->
+    <Modal class="z-modal"
+           footer-hide
+           v-model="modalTips">
+        <div>
+            <img style="width: 100%;"
+                 src="../assets/img/modal/tips.png" alt>
+            <div class="div-yes-no">
+                <img @click="clickTipYes"
+                     style="margin-right: 15px;"
+                     src="../assets/img/modal/yes.png" alt>
+                <img @click="clickTipNo"
+                     style="margin-left: 15px;"
+                     src="../assets/img/modal/no.png" alt>
+            </div>
+        </div>
+    </Modal>
+    <!--    通关对话框-->
+    <Modal class="z-modal"
+           :mask-closable="false"
+           footer-hide
+           v-model="modalCongratulation">
+        <div style="text-align: center">
+            <img :style="congratulationTransform"
+                 style="width: 300px;transition: transform 1s;"
+                 src="../assets/img/congratulations.png">
+        </div>
+    </Modal>
+    <!--    自定义对话框实例-->
+    <Modal class="z-modal"
+           footer-hide
+           v-model="tipAlert">
+        <div class="modal-custom-body">
+            <img class="m-bg" src="../assets/img/modal/bg.png">
+            <div class="m-content">
+                <p v-text="tipMsg">
+                </p>
+            </div>
+            <div class="row-button">
+                <img @click="tipY"
+                     style="margin-right: 15px;"
+                     src="../assets/img/modal/yes.png" alt>
+                <img @click="tipN"
+                     style="margin-left: 15px;"
+                     src="../assets/img/modal/no.png" alt>
+            </div>
+        </div>
+    </Modal>
+
+    <div class="div-avatar">
+        <img @click="clickAvatar()"
+             :src="username===''?'../assets/img/avatar0.png':'../assets/img/avatar.png'">
+        <span style="    font-size: 32px;
+    font-family: fantasy;
+    color: white;" v-text="username"></span>
+    </div>
+
+    <div class="div-music">
+        <img src="../assets/img/page/music.png">
+    </div>
+    <div class="div-logout" @click="logOut()">
+        <span>Log Out</span>
+    </div>
+    <!--    背景图片-->
+    <img src="../assets/img/bg.jpg" class="bg" alt/>
+    <!--标题 音乐-->
+    <div class="row-title">
+        <img src="../assets/img/page/title.png" alt>
+    </div>
+    <!--    return按钮、next按钮、钟-->
+    <div class="row-action">
+        <div style="width: 28%;"></div>
+        <div class="div-action">
+            <img v-show="curIndex===2||curIndex===3||curIndex===4"
+                 @click="clickReturn"
+                 @mouseenter="returnHover=true"
+                 @mouseleave="returnHover=false"
+                 style="cursor: pointer;"
+                 :src="returnHover?'../assets/img/page/return_hover.png':'../assets/img/page/return.png'" alt>
+            <img v-show="curIndex===1"
+                 @mouseenter="nextHover=true"
+                 @mouseleave="nextHover=false"
+                 style="cursor: pointer;"
+                 :src="nextHover?'../assets/img/page/next_hover.jpg':'../assets/img/page/next.jpg'" alt>
+        </div>
+        <div class="flex-grow"></div>
+        <div v-show="curIndex===0||curIndex===1" class="div-action">
+            <img @click="modalValueTable = true"
+                 style="cursor: pointer;"
+                 src="../assets/img/page/value_table.png" alt>
+        </div>
+        <div v-show="curIndex===2||curIndex===3||curIndex===4">
+            <div class="div-clock">
+                <img class="img-number"
+                     :src="getClockNumberImg(this.clockTime,0)">
+                <img class="img-number"
+                     v-show="this.clockTime>9"
+                     :src="getClockNumberImg(this.clockTime,1)">
+                <img class="img-number"
+                     v-show="this.clockTime>99"
+                     :src="getClockNumberImg(this.clockTime,2)">
+            </div>
+        </div>
+    </div>
+    <!--    左侧选项按钮、电路图-->
+    <div class="div-main">
+
+        <!--左侧菜单-->
+        <div class="div-btn">
+            <img @mouseenter="mouseoverBtnItem"
+                 v-for="(item,index) in btnList"
+                 @click="clickMenu(index)"
+                 :class="{'active':curIndex===index}"
+                 :src="item.img" alt>
+        </div>
+
+
+        <div class="flex-grow main-right">
+            <div class="left flex-grow">
+                <div v-show="curIndex===0" id="graph0"
+                     class="logic-graph flex-grow">
+                    <canvas id="canvas0"
+                            :height="canvasSize[0].height"
+                            :width="canvasSize[0].width"></canvas>
+                </div>
+                <div v-show="curIndex===1" id="graph1"
+                     class="logic-graph flex-grow">
+                    <canvas id="canvas1"
+                            :height="canvasSize[1].height"
+                            :width="canvasSize[1].width"></canvas>
+                </div>
+                <div v-show="curIndex===2 ||curIndex===3" id="graph23"
+                     class="logic-graph">
+                    <canvas v-for="(tree,index) in curIndex===2?logicTreeEasy:logicTreeMedium"
+                            :id="'canvas2'+index"
+                            :height="getEasySize(logicTreeEasy.length,logicTreeMedium.length)[0]"
+                            @click="clickEasyBox(tree)"
+                            :style="showBoxOrNot(tree,index)"
+                            :width="getEasySize(logicTreeEasy.length,logicTreeMedium.length)[1]"></canvas>
+                </div>
+                <div v-show="curIndex===4" id="graph4"
+                     class="logic-graph flex-grow">
+                    <canvas id="canvas4"
+                            :height="canvasSize[4].height"
+                            :width="canvasSize[4].width"></canvas>
+                </div>
+                <div v-show="curIndex===0||curIndex===4" class="zero-one">
+                    <img :class="{'select-num':selectNum === '0'}"
+                         @click="chooseNum('0')" src="../assets/img/page/0.png" alt>
+                    <img :class="{'select-num':selectNum === '1'}"
+                         @click="chooseNum('1')" src="../assets/img/page/1.png" alt>
+                </div>
+            </div>
+            <div class="right">
+                <div v-for="logic in logicLegends"
+                     class="logic-legend">
+                    <img :class="{'select-logic':selectLogic === logic}"
+                         @click="chooseLogic(logic)"
+                         :src="`../assets/img/page/${logic}.png`" alt>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+</div>
+</body>
+<!--
+<script src="../assets/js/jquery-3.2.1.min.js"></script>
+-->
+
+<script>
+    const app = new Vue({
+        el: '#app',
+        data: {
+            modalTips: false, //提示关卡内容 , 图片显示 , 改为文字
+            modalValueTable: false,//真值表
+            modalLevel: false,//关卡 星星
+            modalCongratulation: false, //通过祝贺 弹窗
+            tipAlert: false,//自定义弹窗开关
+            tipConfirm: false,//二次提示 开关
+            tipMsg: '',//自定义内容
+            //初始化星星格式 , 在页面初始化查询关卡通过情况重新初始化
+            levelList: [
+                {lock: false, stars: [false, false, false]},
+                {lock: true, stars: [false, false, false]},
+                {lock: true, stars: [false, false, false]},
+                {lock: true, stars: [false, false, false]},
+                {lock: true, stars: [false, false, false]},
+                {lock: true, stars: [false, false, false]},
+            ],
+            //当前关卡的配置
+            boxLevel: {},
+            //用户名 用来显示
+            username: '',
+            //返回按钮控制显示
+            returnHover: false,
+            //下一关控制显示
+            nextHover: false,
+            canvasGapX: 25,
+            canvasGapY: 10,
+            //时间 秒 控制 后面初始化
+            clockTime: 60,
+            //触发器 的id 到时间后销毁
+            tickId: null,
+            //当前的菜单 索引 1 开始
+            curIndex: 5,
+            //当前星星 关卡
+            currStar: 1,
+            //逻辑门 选项
+            logicLegends: [
+                'XOR',
+                'NOR',
+                'OR',
+                'NAND',
+                'AND',
+            ],
+            //自定义内容信息存放
+            msgList: [
+                {
+                    msg: 'Please freely match 0&1 and logic gate, click on the logic gate to get the result.',
+                    y: 'You can also check the value table'
+                },
+                {
+                    msg: 'Please think about what logical relationship is, and choose a suitable logic gate. You can view the value table.',
+                    y: 'Think again, there are n suitable logic gate(s).'
+                }, {
+                    msg: 'In this round of games, there will be n boxes. You need to select ANY suitable logic gate within the specified time to make all the boxes disappear.',
+                    f: 'You can click on the user name in the upper left corner to see how you light the stars.',
+                    c: 'Would you like to continue playing?'
+                }, {
+                    msg: 'In this round of games, there will be n boxes. You need to select ALL the suitable logic gates within the specified time to make all the boxes disappear.',
+                    c: 'Would you like to continue playing?'
+                }, {
+                    msg: 'You can combine the values or logic gates at “?” within the specified time to make the circuit diagram.'
+                }
+            ],
+            //左侧 菜单按钮列表 图片路径及 显示控制
+            btnList: [
+                {
+                    img: '../assets/img/page/what.png',
+                    isActive: false,
+                }, {
+                    img: '../assets/img/page/how.png',
+                    isActive: false,
+                }, {
+                    img: '../assets/img/page/easy.png',
+                    isActive: false,
+                }, {
+                    img: '../assets/img/page/medium.png',
+                    isActive: false,
+                }, {
+                    img: '../assets/img/page/hard.png',
+                    isActive: false,
+                },
+            ],
+            canvasSize: [
+                {
+                    width: '',
+                    height: '',
+                }, {
+                    width: '',
+                    height: '',
+                }, {
+                    width: '10',
+                    height: '5',
+                }, {
+                    width: '10',
+                    height: '5',
+                }, {
+                    width: '',
+                    height: '',
+                },
+            ],
+            stage: [{}, {}, [{}, {}, {}], [{}, {}, {}], {}],
+            colorRect: '#ffe6be',
+            colorRectHover: '#e2c9aa',
+            colorLine: '#f19049',
+            shadowHover: '#aaaaaa',
+            shadowThis: '#3367d6',
+            shadowError: '#f00',
+            shadowRight: '#1aa260',
+            queue: null,
+            //第一个 什么是逻辑门 的 电路图初始值
+            logicTreeWhat: [
+                [{val: '0', edit: true}, {val: '1', edit: true}], [{val: 'AND', logic: true, edit: true}], [{
+                    val: '1',
+                    edit: true
+                }]
+            ],
+            //第二个
+            logicTreeHow: [
+                [{val: '0'}, {val: '0'}], [{val: '?', logic: true}], [{val: '1'}]
+            ],
+            //第三个
+            logicTreeEasy: [
+                [[{val: '1',}, {val: '1',}], [{val: '?', logic: true, edit: true}], [{val: '1'}]],
+                [[{val: '0'}, {val: '1'}], [{val: '?', logic: true, edit: true}], [{val: '1',}]],
+                [[{val: '0'}, {val: '1'}], [{val: '?', logic: true, edit: true}], [{val: '1',}]],
+                [[{val: '0'}, {val: '0'}], [{val: '?', logic: true, edit: true}], [{val: '0'}]],
+                [[{val: '0'}, {val: '0'}], [{val: '?', logic: true, edit: true}], [{val: '0'}]],
+                [[{val: '0'}, {val: '0'}], [{val: '?', logic: true, edit: true}], [{val: '0'}]],
+                [[{val: '0'}, {val: '0'}], [{val: '?', logic: true, edit: true}], [{val: '0'}]],
+                [[{val: '0'}, {val: '0'}], [{val: '?', logic: true, edit: true}], [{val: '0'}]],
+
+                [[{val: '0'}, {val: '0'}], [{val: '?', logic: true, edit: true}], [{val: '0'}]],
+                [[{val: '0'}, {val: '0'}], [{val: '?', logic: true, edit: true}], [{val: '0'}]],
+                [[{val: '0'}, {val: '0'}], [{val: '?', logic: true, edit: true}], [{val: '0'}]],
+                [[{val: '0'}, {val: '0'}], [{val: '?', logic: true, edit: true}], [{val: '0'}]],
+                [[{val: '0'}, {val: '0'}], [{val: '?', logic: true, edit: true}], [{val: '0'}]],
+                [[{val: '0'}, {val: '0'}], [{val: '?', logic: true, edit: true}], [{val: '0'}]],
+                [[{val: '0'}, {val: '0'}], [{val: '?', logic: true, edit: true}], [{val: '0'}]],
+
+                // [[{val: '0'}, {val: '0'}], [{val: '?', logic: true, edit: true}], [{val: '0'}]],
+                // [[{val: '0'}, {val: '0'}], [{val: '?', logic: true, edit: true}], [{val: '0'}]],
+                // [[{val: '0'}, {val: '0'}], [{val: '?', logic: true, edit: true}], [{val: '0'}]],
+                // [[{val: '0'}, {val: '0'}], [{val: '?', logic: true, edit: true}], [{val: '0'}]],
+                // [[{val: '0'}, {val: '0'}], [{val: '?', logic: true, edit: true}], [{val: '0'}]],
+            ],
+            //第四个
+            logicTreeMedium: [
+                [[{val: '1',}, {val: '1',}], [{val: '?', logic: true, edit: true}], [{val: '1'}]],
+                [[{val: '0'}, {val: '1'}], [{val: '?', logic: true, edit: true}], [{val: '1',}]],
+                [[{val: '0'}, {val: '1'}], [{val: '?', logic: true, edit: true}], [{val: '1'}]],
+                [[{val: '0'}, {val: '1'}], [{val: '?', logic: true, edit: true}], [{val: '1'}]],
+                [[{val: '0'}, {val: '1'}], [{val: '?', logic: true, edit: true}], [{val: '1'}]],
+                [[{val: '0'}, {val: '1'}], [{val: '?', logic: true, edit: true}], [{val: '1'}]],
+                [[{val: '0'}, {val: '1'}], [{val: '?', logic: true, edit: true}], [{val: '1'}]],
+                [[{val: '0'}, {val: '1'}], [{val: '?', logic: true, edit: true}], [{val: '1'}]],
+            ],
+            //第五个
+            logicTreeHard: [
+                [{val: '?', edit: true}, {val: '0'}, {val: '0'}, {val: '0'}, {val: '0'}, {val: '0'}],
+                [{val: 'OR', logic: true}, {val: '?', logic: true, edit: true}, {val: 'AND', logic: true}],
+                [{val: '0'}, {val: '0'}, {val: '0'}],
+                [{val: 'AND', logic: true}, {val: 'OR', logic: true}],
+                [{val: '?', edit: true,}, {val: '?', edit: true,}],
+                [{val: 'AND', logic: true}],
+                [{val: '0'}],
+            ],
+            /* logicTreeHard: [
+                 [{edit: true, val: '?'}, {val: '0'}, {edit: true, val: '?'}, {val: '0'}, {val: '0'}, {val: '0'}],
+                 [{logic: true, val: 'OR'}, {logic: true, edit: true, val: '?'}, {logic: true, val: 'AND'}],
+                 [{val: '0'}, {val: '0'}, {val: '0'}],
+                 [{logic: true, val: 'AND'}, {logic: true, val: 'OR'}],
+                 [{edit: true, val: '?'}, {edit: true, val: '?'}],
+                 [{logic: true, val: 'AND'}],
+                 [{val: '0'}]
+             ],*/
+            easySize: [[100, 150], [80, 120], [80, 120]],
+            curNode: null,
+            curShape: null,
+            //当前选中数字
+            selectNum: null,
+            //当前选中逻辑门
+            selectLogic: null,
+            congratulationTransform: {
+                transform: 'translateY(0)'
+            }
+        },
+        watch: {
+            curIndex() {
+                setTimeout(() => {
+                    this.setupCanvasSize();
+                    this.drawLogicTree(this.curIndex);
+                }, 1);
+                if (this.curIndex === 2 || this.curIndex === 3 || this.curIndex === 4) {
+                    this.startTick(60);
+                    createjs.Sound.play("ready");
+                }
+            },
+            modalValueTable() {
+                if (this.modalValueTable)
+                    createjs.Sound.play("think");
+            },
+            modalCongratulation() {
+                if (this.modalCongratulation) {
+                    setTimeout(() => {
+                        app.congratulationTransform = {
+                            transform: 'translateY(100vh)'
+                        }
+                    }, 1500);
+                    setTimeout(() => {
+                        app.modalLevel = true;
+                        app.modalCongratulation = false;
+                        app.congratulationTransform = {
+                            transform: 'translateY(0)'
+                        }
+                    }, 2500);
+                }
+            }
+        },
+        mounted() {
+            //查询关卡
+            var me = this;
+            if (localStorage.getItem('curIndex'))
+                this.curIndex = parseInt(localStorage.getItem('curIndex'));
+
+            this.username = localStorage.getItem('username');
+            this.queue = new createjs.LoadQueue();
+            this.queue.installPlugin(createjs.Sound);
+            this.queue.on("complete", handleComplete, this);
+            this.queue.loadManifest([
+                {id: "0", src: '../assets/img/graph/0.png'},
+                {id: "1", src: '../assets/img/graph/1.png'},
+                {id: "AND", src: '../assets/img/graph/AND.png'},
+                {id: "NAND", src: '../assets/img/graph/NAND.png'},
+                {id: "NOR", src: '../assets/img/graph/NOR.png'},
+                {id: "OR", src: '../assets/img/graph/OR.png'},
+                {id: "XOR", src: '../assets/img/graph/XOR.png'},
+                {id: "?", src: '../assets/img/graph/Q.png'},
+                //音乐
+                {id: "bg", src: '../assets/mp3/bg.mp3'},
+                {id: "fail", src: '../assets/mp3/matchFail.mp3'},
+                {id: "success", src: '../assets/mp3/matchSuccess.mp3'},
+                {id: "victory", src: '../assets/mp3/victory.mp3'},
+                {id: "mover", src: '../assets/mp3/mover.mp3'},
+                {id: "timeout", src: '../assets/mp3/timeout.mp3'},
+                {id: "think", src: '../assets/mp3/think.mp3'},
+                {id: "ready", src: '../assets/mp3/ready.mp3'},
+            ]);
+
+            function handleComplete() {
+                app.setupCanvasSize();
+                app.loadLevelInfo();
+                app.drawLogicTree(this.curIndex);
+                createjs.Sound.play("bg", {loop: -1});
+            }
+
+            window.onresize = () => {
+                app.setupCanvasSize();
+                this.drawLogicTree(this.curIndex);
+            };
+            //根据关卡显示提示
+            this.showTips();
+
+        },
+        methods: {
+            getEasySize(easyLen, mediumLen) {
+                let curLen = easyLen;
+                if (this.curIndex === 3)
+                    curLen = mediumLen;
+                if (curLen <= 8) {
+                    return this.easySize[0];
+                } else if (curLen <= 15) {
+                    return this.easySize[1];
+                } else {
+                    return this.easySize[2];
+                }
+            },
+            clickEasyBox(tree) {
+                if (!this.selectLogic)
+                    return;
+                tree[1][0].val = this.selectLogic;
+                let num1 = tree[0][0];
+                let num2 = tree[0][1];
+                let num3 = tree[2][0];
+                let op = tree[1][0];
+                if (this.operate(op.val, num1.val, num2.val) === num3.val) {
+                    createjs.Sound.play("success");
+                } else {
+                    createjs.Sound.play("fail");
+                }
+            },
+            showBoxOrNot(tree, index) {
+                let num1 = tree[0][0];
+                let num2 = tree[0][1];
+                let num3 = tree[2][0];
+                let op = tree[1][0];
+                if (this.operate(op.val, num1.val, num2.val) === num3.val) {
+                    return {visibility: 'hidden'};
+                } else {
+                    return {visibility: 'visible'};
+                }
+            },
+            //后端添加 渲染星星 传入的是已经通过的关id
+            setStars(id) {
+                this.currStar = id + 1;
+                var level = parseInt(id / 3 + 1);//每关3星
+                for (var i = 0; i < this.levelList.length; i++) {
+                    if (i < level) {
+                        this.levelList[i].lock = false;
+                        if (i < level - 1) {
+                            this.levelList[i].stars = [true, true, true];
+                        } else {
+                            for (var j = 0; j < id % 3; j++) {
+                                this.levelList[i].stars[j] = true;
+                            }
+                        }
+                    } else {
+                        break;
+                    }
+                }
+            },
+            goToNextLevel() {
+                this.modalCongratulation = true;
+            },
+            fillBlank(logicTree) {
+                console.log("当前选中curNode:" + JSON.stringify(this.curNode));
+                console.log("当前选中逻辑门:" + this.selectLogic + ",当前选中数字:" + this.selectNum);
+                if (!this.curNode.edit)
+                    return;
+                if (this.curNode.logic) {
+                    if (!this.selectLogic)
+                        return;
+                    this.curNode.val = this.selectLogic;
+                    this.judgeLogicTree(this.curIndex, logicTree);
+                    this.updateLogicTree(this.curIndex);
+                }
+                if (!this.curNode.logic) {
+                    if (!this.selectNum)
+                        return;
+                    this.curNode.val = this.selectNum;
+                    this.judgeLogicTree(this.curIndex, logicTree);
+                    this.updateLogicTree(this.curIndex);
+                }
+                console.log("当前值:" + JSON.stringify(this.logicTreeHard));
+            },
+            judgeLogicTree(index, logicTree) {
+
+                if (logicTree.length === 3) {
+                    let logicTreeList = this.logicTreeEasy;
+                    if (index === 3)
+                        logicTreeList = this.logicTreeMedium;
+                    let allRight = true;
+                    for (let tree of logicTreeList) {
+                        let num1 = tree[0][0];
+                        let num2 = tree[0][1];
+                        let num3 = tree[2][0];
+                        let op = tree[1][0];
+                        if (this.operate(op.val, num1.val, num2.val) === num3.val) {
+                            for (let item of [num1, num2, num3, op])
+                                item.right = true;
+                        } else {
+                            for (let item of [num1, num2, num3, op])
+                                item.right = false;
+                            allRight = false;
+                        }
+                    }
+                    if (allRight) {
+                        createjs.Sound.play("victory");
+                        this.goToNextLevel();
+                    } else {
+                        this.curNode.right ? createjs.Sound.play("success") : createjs.Sound.play("fail");
+                    }
+                } else if (logicTree.length === 7) {
+                    let allRight = true;
+                    for (let i = 0; i < logicTree.length; i++, i++) {
+                        let treeLevel = logicTree[i];
+                        if (i === 0) {
+                            for (let j = 0; j < treeLevel.length; j++, j++) {
+                                let num1 = treeLevel[j];
+                                let num2 = treeLevel[j + 1];
+                                let num3 = logicTree[i + 2][j / 2];
+                                let op = logicTree[i + 1][j / 2];
+                                if (this.operate(op.val, num1.val, num2.val) === num3.val) {
+                                    for (let item of [num1, num2, num3, op])
+                                        item.right = true;
+                                } else {
+                                    allRight = false;
+                                    for (let item of [num1, num2, num3, op])
+                                        item.right = false;
+                                }
+                            }
+                            if (!allRight) break;
+                        } else if (i === 2) {
+                            for (let j = 1; j < treeLevel.length; j++) {
+                                let num1 = treeLevel[j - 1];
+                                let num2 = treeLevel[j];
+                                let num3 = logicTree[i + 2][j - 1];
+                                let op = logicTree[i + 1][j - 1];
+                                if (this.operate(op.val, num1.val, num2.val) === num3.val) {
+                                    for (let item of [num1, num2, num3, op])
+                                        item.right = true;
+                                } else {
+                                    allRight = false;
+                                    for (let item of [num1, num2, num3, op])
+                                        item.right = false;
+                                }
+                            }
+                            if (!allRight) break;
+                        } else if (i === 4) {
+                            let num1 = treeLevel[0];
+                            let num2 = treeLevel[1];
+                            let num3 = logicTree[i + 2][0];
+                            let op = logicTree[i + 1][0];
+                            if (this.operate(op.val, num1.val, num2.val) === num3.val) {
+                                for (let item of [num1, num2, num3, op])
+                                    item.right = true;
+                            } else {
+                                allRight = false;
+                                for (let item of [num1, num2, num3, op])
+                                    item.right = false;
+                            }
+                        }
+                    }
+                    if (allRight) {
+                        createjs.Sound.play("victory");
+                        this.goToNextLevel();
+                    } else {
+                        this.curNode.right ? createjs.Sound.play("success") : createjs.Sound.play("fail");
+                    }
+                }
+            },
+            setupCanvasSize() {
+                let domList = [
+                    document.getElementById('graph0'),
+                    document.getElementById('graph1'),
+                    document.getElementById('graph0'),//占位
+                    document.getElementById('graph0'),//占位
+                    document.getElementById('graph4'),
+                ];
+
+                for (let i in domList) {
+                    let width = domList[i].clientWidth;
+                    let height = domList[i].clientHeight;
+                    if (i === '2' || i === '3') {
+                        //-2去掉边框宽度
+                        width = (width - 3 * this.canvasGapX) / 2 - 2;
+                        height = (height - 3 * this.canvasGapY) / 2 - 2;
+                        //不显示时，高宽会变负数，导致canvas变成默认大小
+                        if (width < 0 || height < 0)
+                            continue;
+                    }
+                    this.canvasSize[i].width = width;
+                    this.canvasSize[i].height = height;
+                }
+            },
+            //只有盒子的图
+            _drawLogicTreeOnlyBox(logicTree, stage, cW, cH) {
+                stage.removeAllChildren();
+                stage.clear();
+                let gap = cH * 0.05;
+                let rect1H = (cH - gap * 3) / 2;
+                let rect1W = (cW - gap * 3) / 2;
+                let rect2H = cH - gap * 2;
+                let rect2W = rect1W;
+
+                let rect1 = new createjs.Shape();
+                rect1.graphics
+                    .f(this.colorRect).rr(gap, gap, rect1W, rect1H, 5);
+                let rect2 = new createjs.Shape();
+                rect2.graphics
+                    .f(this.colorRect)
+                    .rr(gap, rect1H + gap * 2, rect1W, rect1H, 5);
+                let rect3 = new createjs.Shape();
+                rect3.graphics
+                    .f(this.colorRect)
+                    .rr(cW - gap - rect2W, gap, rect2W, rect2H, 5);
+
+                let img1 = new createjs.Bitmap(this.queue.getResult(logicTree[0][0].val));
+                let wh = this.scaleBitmap(img1, rect1H);
+                img1.x = gap + rect1W / 2 - wh[0] / 2;
+                img1.y = gap + rect1H / 2 - wh[1] / 2;
+
+                let img2 = new createjs.Bitmap(this.queue.getResult(logicTree[0][1].val));
+                wh = this.scaleBitmap(img2, rect1H);
+                img2.x = gap + rect1W / 2 - wh[0] / 2;
+                img2.y = cH - gap - rect1H / 2 - wh[1] / 2;
+
+                let img4 = new createjs.Bitmap(this.queue.getResult(logicTree[2][0].val));
+                wh = this.scaleBitmap(img4, rect1H);
+                img4.x = cW - gap - rect2W / 2 - wh[0] / 2;
+                img4.y = gap + rect2H / 2 - wh[1] / 2;
+
+                // let treeNodeList = [logicTree[0][0], logicTree[0][1], logicTree[2][0]];
+                // let objList = [rect1, rect2, rect3];
+                // for (let i in objList) {
+                //     let obj = objList[i];
+                //     let node = treeNodeList[i];
+                //     if (node.current) {
+                //         this.curNode = node;
+                //     }
+                //     app.setShadow(node, obj);
+                //     obj.on('mouseover', evt => {
+                //         app.setShadow(node, obj, true);
+                //     });
+                //     obj.on('mouseout', evt => {
+                //         app.setShadow(node, obj);
+                //         createjs.Sound.play("mover");
+                //     });
+                //     obj.on('click', evt => {
+                //         app.curNode = node;
+                //         app.fillBlank(logicTree);
+                //     });
+                // }
+                for (let child of [rect1, rect2, rect3, img1, img2, img4])
+                    stage.addChild(child);
+            },
+            _drawLogicTree3Elements(logicTree, stage, cW, cH) {
+                stage.removeAllChildren();
+                stage.clear();
+                let gap = cH * 0.05;
+                let rect1H = (cH - gap * 3) / 2;
+                let rect1W = rect1H * 1.75;
+                let rect2H = cH - gap * 2;
+                let rect2W = rect2H / 1.75;
+                let strokeW = rect1H * 0.18;
+                //线段中点的X坐标
+                let centerX = (cW - 2 * gap - rect1W - rect2W) / 2 + gap + rect1W;
+                let centerY = cH / 2;
+                let rect1 = new createjs.Shape();
+                rect1.graphics
+                    .f(this.colorRect).rr(gap, gap, rect1W, rect1H, 5);
+                let rect2 = new createjs.Shape();
+                rect2.graphics
+                    .f(this.colorRect)
+                    .rr(gap, rect1H + gap * 2, rect1W, rect1H, 5);
+                let rect3 = new createjs.Shape();
+                rect3.graphics
+                    .f(this.colorRect)
+                    .rr(cW - gap - rect2W, gap, rect2W, rect2H, 5);
+                let mtPosY = gap + rect1H / 2;
+                let qtPosY = mtPosY + strokeW;
+                let line = new createjs.Shape();
+                line.graphics.s(this.colorLine)
+                    .ss(strokeW)
+                    .mt(gap, mtPosY)
+                    .lt(centerX - strokeW, mtPosY)
+                    .qt(centerX, mtPosY, centerX, qtPosY)
+                    .mt(gap, cH - mtPosY)
+                    .lt(centerX - strokeW, cH - mtPosY)
+                    .qt(centerX, cH - mtPosY, centerX, cH - qtPosY)
+                    .lt(centerX, qtPosY)
+                    .mt(centerX, centerY)
+                    .lt(cW - gap, centerY);
+                let img1 = new createjs.Bitmap(this.queue.getResult(logicTree[0][0].val));
+                let wh = this.scaleBitmap(img1, rect1H);
+                img1.x = gap + rect1W / 2 - wh[0] / 2;
+                img1.y = gap + rect1H / 2 - wh[1] / 2;
+
+                let img2 = new createjs.Bitmap(this.queue.getResult(logicTree[0][1].val));
+                wh = this.scaleBitmap(img2, rect1H);
+                img2.x = gap + rect1W / 2 - wh[0] / 2;
+                img2.y = cH - gap - rect1H / 2 - wh[1] / 2;
+
+                let img4 = new createjs.Bitmap(this.queue.getResult(logicTree[2][0].val));
+                wh = this.scaleBitmap(img4, rect1H);
+                img4.x = cW - gap - rect2W / 2 - wh[0] / 2;
+                img4.y = gap + rect2H / 2 - wh[1] / 2;
+
+                let img3 = new createjs.Bitmap(this.queue.getResult(logicTree[1][0].val));
+                wh = this.scaleBitmap(img3, rect1H, true);
+                img3.x = centerX - wh[0] / 2;
+                img3.y = centerY - wh[1] / 2;
+
+                let treeNodeList = [logicTree[0][0], logicTree[0][1], logicTree[1][0], logicTree[2][0]];
+                let objList = [rect1, rect2, img3, rect3];
+                for (let i in objList) {
+                    let obj = objList[i];
+                    let node = treeNodeList[i];
+                    if (node.current) {
+                        this.curNode = node;
+                    }
+                    app.setShadow(node, obj);
+                    obj.on('mouseover', evt => {
+                        app.setShadow(node, obj, true);
+                    });
+                    obj.on('mouseout', evt => {
+                        app.setShadow(node, obj);
+                        createjs.Sound.play("mover");
+                    });
+                    obj.on('click', evt => {
+
+                        app.curNode = node;
+                        app.fillBlank(logicTree);
+                    });
+                }
+                for (let child of [line, rect1, rect2, rect3, img1, img2, img3, img4])
+                    stage.addChild(child);
+
+                // console.log(JSON.stringify(stage));
+
+            },
+            _drawLogicTreeMoreElements(logicTree, stage, cW, cH) {
+                if (logicTree.length === 0)
+                    return;
+                stage.removeAllChildren();
+                stage.clear();
+                let _this = this;
+                //图片最左结点数量
+                let leafCount = logicTree[0].length;
+                //数字列数目
+                let numColCount = Math.ceil(logicTree.length / 2);
+                let gap = cH * 0.04;
+                let rectH = (cH - gap * (leafCount + 1)) / leafCount;
+                let rectW = rectH * 1.75;
+                let strokeW = rectH * 0.2;
+                //水平两个数字之间线段的水平距离
+                let eachLineWidth = (cW - 2 * gap - numColCount * rectW) / (numColCount - 1);
+                let firstLineY = gap + rectH / 2;
+                let lineYList = [];
+                for (let i in logicTree[0]) {
+                    lineYList.push(firstLineY);
+                    firstLineY += gap + rectH;
+                }
+                let res = {
+                    x: gap,
+                    y: lineYList
+                };
+                for (let i = 0; i < logicTree.length; i++, i++) {
+                    res = _drawNumberLevel(logicTree[i], res.x, res.y, logicTree[i + 1]);
+                }
+
+                function _drawNumberLevel(treeLevel, lineX, lineYList, logicList) {
+                    let newLineYList = [];
+                    let newlineX = -1;
+                    let newlineY = -1;
+                    let x = lineX;
+                    let isEven = treeLevel.length % 2 === 0;
+                    //遍历数字列的每一个数字
+                    for (let i = 0; i < treeLevel.length; i++) {
+                        let y = lineYList[i] - rectH / 2;
+                        let lineY = lineYList[i];
+                        let nextLineY = lineYList[i + 1];
+                        let node = treeLevel[i];
+                        let rect = new createjs.Shape();
+                        rect.graphics
+                            .f(_this.colorRect).rr(x, y, rectW, rectH, 5);
+                        app.setShadow(node, rect);
+                        rect.on('mouseover', evt => {
+                            app.setShadow(node, rect, true);
+                        });
+                        rect.on('mouseout', evt => {
+                            app.setShadow(node, rect);
+                            createjs.Sound.play("mover");
+                        });
+                        rect.on('click', evt => {
+                            app.curNode = node;
+                            app.fillBlank(logicTree)
+                        });
+                        let imgNum = new createjs.Bitmap(_this.queue.getResult(node.val));
+                        let wh = app.scaleBitmap(imgNum, rectH);
+                        let imgX = lineX + rectW / 2 - wh[0] / 2;
+                        let imgY = lineYList[i] - wh[1] / 2;
+                        imgNum.x = imgX;
+                        imgNum.y = imgY;
+                        if ((isEven && i % 2 === 0) || (!isEven && i !== treeLevel.length - 1)) {
+                            //每对数字第一个画线
+                            let line = new createjs.Shape();
+                            newlineX = lineX + rectW + eachLineWidth;
+                            newlineY = (lineY + nextLineY) / 2;
+                            line.graphics
+                                .s(_this.colorLine)
+                                .ss(strokeW)
+                                .moveTo(lineX, lineY)
+                                .lineTo(lineX + rectW + eachLineWidth / 2 - strokeW, lineY)
+                                .qt(lineX + rectW + eachLineWidth / 2, lineY, lineX + rectW + eachLineWidth / 2, lineY + strokeW)
+                                .moveTo(lineX, nextLineY)
+                                .lineTo(lineX + rectW + eachLineWidth / 2 - strokeW, nextLineY)
+                                .qt(lineX + rectW + eachLineWidth / 2, nextLineY, lineX + rectW + eachLineWidth / 2, nextLineY - strokeW)
+                                .lt(lineX + rectW + eachLineWidth / 2, lineY + strokeW)
+                                //合并线
+                                .mt(lineX + rectW + eachLineWidth / 2, newlineY)
+                                .lt(newlineX, newlineY);
+                            newLineYList.push(newlineY);
+
+                            stage.addChild(line);
+                            lineY += 2 * (rectH + gap);
+                            //画逻辑符号
+                            let logicNode = logicList[Math.floor(i / 2)];
+                            if (!isEven)
+                                logicNode = logicList[i];
+                            let imgLogic = new createjs.Bitmap(_this.queue.getResult(logicNode.val));
+                            let wh = app.scaleBitmap(imgLogic, rectH, true);
+                            imgLogic.x = newlineX - eachLineWidth / 2 - wh[0] / 2;
+                            imgLogic.y = newlineY - wh[1] / 2;
+                            app.setShadow(logicNode, imgLogic);
+                            imgLogic.on("mouseover", evt => {
+                                app.setShadow(logicNode, imgLogic, true);
+                            });
+                            imgLogic.on("mouseout", evt => {
+                                app.setShadow(logicNode, imgLogic);
+                                createjs.Sound.play("mover");
+                            });
+                            imgLogic.on('click', evt => {
+                                app.curNode = logicNode;
+                                app.fillBlank(logicTree);
+                            });
+                            stage.addChild(imgLogic);
+                        }
+                        stage.addChild(rect);
+                        stage.addChild(imgNum);
+                        y += rectH + gap;
+                        imgY += rectH + gap;
+                    }
+                    return {
+                        x: newlineX,
+                        y: newLineYList
+                    };
+                }
+            },
+            updateLogicTree(index) {
+                let stageInEasyMedium = this.stage[2];
+                let logicTree = [this.logicTreeWhat, this.logicTreeHow,
+                    this.logicTreeEasy, this.logicTreeMedium, this.logicTreeHard][index];
+                if (!logicTree || logicTree.length === 0)
+                    return;
+                let stage = this.stage[index];
+                let cW = this.canvasSize[index].width;
+                let cH = this.canvasSize[index].height;
+                if (index === 2 || index === 3) {
+                    let wh = this.getEasySize(this.logicTreeEasy.length, this.logicTreeMedium.length);
+                    cH = wh[0];
+                    cW = wh[1];
+                    for (let i in stageInEasyMedium) {
+                        if (logicTree[i].length === 3) {
+                            this._drawLogicTreeOnlyBox(logicTree[i], stageInEasyMedium[i], cW, cH);
+                        }
+                    }
+                } else {
+                    if (logicTree.length === 3)
+                        this._drawLogicTree3Elements(logicTree, stage, cW, cH);
+                    else
+                        this._drawLogicTreeMoreElements(logicTree, stage, cW, cH);
+                }
+            },
+            //加载关卡信息
+            loadLevelInfo() {
+                var me = this;
+                /* $.get("/api/user/boxLevel/getMaxLevel",function (rs) {
+                     if (rs.code=="0000"){
+                         //设置星星
+                         app.setStars(rs.data);
+                         //查询关卡配置
+                         $.get("/api/user/boxLevel/getLevel/"+(rs.data+1),function (rsp) {
+                             /!*是否玩下一关*!/
+                             if(rsp.code=="3001"){
+                                 me.tipMsg = '没有下一关';
+                                 //没有下一关
+                                 me.tipAlert = true;
+                             }else if(rsp.code=="0000"){
+                                 me.boxLevel = rsp.data;
+                             } else{
+                                 alert(rsp.msg);
+                             }
+                         });
+                     }else{
+                         alert(rs.msg);
+                     }
+                 });*/
+                //如果玩最后一关 再加载最后一关题目 , 随机出题
+                if (this.curIndex === 4) {
+                    //  this.loadHardLevel();
+                    //模拟 加载题目
+                    this.logicTreeHard = [[{
+                        val: '?',
+                        edit: true
+                    }, {val: '?', edit: true}, {val: '0'}, {val: '0'}, {val: '0'}, {val: '0'}],
+                        [{val: 'OR', logic: true}, {val: '?', logic: true, edit: true}, {val: 'AND', logic: true}],
+                        [{val: '0'}, {val: '0'}, {val: '0'}],
+                        [{val: 'AND', logic: true}, {val: 'OR', logic: true}],
+                        [{val: '?', edit: true,}, {val: '?', edit: true,}],
+                        [{val: 'AND', logic: true}],
+                        [{val: '0'}]];
+                    // me.drawLogicTree('hard');
+                }
+            },
+            paraseData(list) {
+                this.logicTreeHard = [];
+
+                var layer = list[0].layer; //获取第一个层级
+                var layerList = []; //一层级 列表
+                for (var i in list) {
+                    var c = list[i];
+                    if (layer == c.layer) {
+                        layerList.push(toObj(c));
+                    } else {
+                        //如果是下一层级 则将层级记录
+                        layer = c.layer;
+                        //将上层级 注入
+                        this.logicTreeHard.push(layerList);
+                        //重置层级列表  并将当前存入
+                        layerList = [toObj(c)];
+                    }
+                }
+
+                //最后一个判断是否还有层级列表中未 注入的项
+                if (layerList.length > 0) {
+                    this.logicTreeHard.push(layerList);
+                }
+                this.logicTreeHard.push([]);
+                console.log("最后得出对象:" + JSON.stringify(this.logicTreeHard));
+
+                function toObj(i) {
+                    var obj = {};
+
+                    if (i.type == '1') {//1 是逻辑门
+                        obj.logic = true;
+                    }
+                    if (i.val == '?') {
+                        obj.edit = true;
+                    }
+                    obj.val = i.val;
+                    return obj;
+                }
+            },
+            loadHardLevel() {
+                var me = this;
+                /* $.get("/api/user/getRandomHard",function (rsp) {
+                     if (rsp.code=="0000"){
+                         console.log("hard 关 数据"+JSON.stringify(rsp.data));
+                         me.clockTime = rsp.data.time ;
+                         //解析后台数据到前端渲染
+                         me.paraseData(rsp.data.subjectInputs);
+                         me.drawLogicTree(me.curIndex);
+                     }else{
+                         alert(rsp.msg);
+                     }
+                 });*/
+            },
+            //从 0 开始 数
+            clickMenu(i) {
+                localStorage.setItem('curIndex', i);
+                this.curIndex = i;
+                this.showTips();
+                if (i === 4) {
+                    this.loadHardLevel();
+                }
+            },
+            //根据菜单显示提示
+            showTips() {
+                var curr = this.curIndex;
+                console.log(curr);
+                this.tipMsg = this.msgList[curr].msg;
+                this.tipAlert = true;
+            },
+            //画逻辑门图
+            drawLogicTree(index) {
+                //easy页的canvas id集合
+                let idList = [];
+                for (let i in this.logicTreeEasy)
+                    idList.push('canvas2' + i);
+                let stageInEasyMedium = [];
+                for (let cid of idList)
+                    stageInEasyMedium.push(new createjs.Stage(cid));
+
+                this.stage = [new createjs.Stage("canvas0"),
+                    new createjs.Stage("canvas1"), stageInEasyMedium, stageInEasyMedium,
+                    new createjs.Stage("canvas4"),];
+
+                createjs.Ticker.framerate = 60;
+
+                for (let stage of [this.stage[0], this.stage[1], this.stage[4], ...stageInEasyMedium]) {
+                    createjs.Ticker.addEventListener("tick", stage);
+                    stage.enableMouseOver(10);
+                }
+
+                this.updateLogicTree(index);
+
+            },
+            //缩放bitmap返回缩放后的width，height
+            scaleBitmap(bitmap, rectH, isLogic) {
+                let ratio = 0.5;
+                if (isLogic)
+                    ratio = 0.7;
+                let numTrueH = bitmap.getBounds().height;
+                let numScale = rectH * ratio / numTrueH;
+                bitmap.scaleX = bitmap.scaleY = numScale;
+                return [bitmap.getTransformedBounds().width, bitmap.getTransformedBounds().height]
+            },
+            setShadow(node, shape, hover) {
+                if (node.edit)
+                    if (node.right)
+                        shape.shadow = new createjs.Shadow(app.shadowRight, 0, 0, 5);
+                    else
+                        shape.shadow = new createjs.Shadow(app.shadowError, 0, 0, 5);
+                else
+                    shape.shadow = null;
+                if (node.current)
+                    shape.shadow = new createjs.Shadow(app.shadowThis, 0, 0, 5);
+                if (hover)
+                    if (node.edit)
+                        shape.shadow = new createjs.Shadow(app.shadowThis, 0, 0, 5);
+                    else
+                        shape.shadow = new createjs.Shadow(app.shadowHover, 0, 0, 5);
+            },
+
+            clickReturn() {
+
+            },
+            clickAvatar() {
+                this.modalLevel = true;
+            },
+            logOut() {
+                /*  $.get("/api/logout",function(){
+                        location.href="index.html";
+                  });*/
+            },
+            //选中逻辑门
+            chooseLogic(logic) {
+
+                //   this.selectNum = '';
+                this.selectLogic = logic;
+                createjs.Sound.play("mover");
+                console.log("选中逻辑门:" + logic);
+            },
+            //选中数字
+            chooseNum(num) {
+
+                console.log("选中数字:" + num);
+                this.selectNum = num;
+                createjs.Sound.play("mover");
+            },
+            //设置时间
+            startTick(time) {
+                this.clockTime = time;
+                clearInterval(this.tickId);
+                this.tickId = setInterval(() => {
+                    this.clockTime--;
+                    if (this.clockTime === 0) {
+                        clearInterval(this.tickId);
+                        app.onTimeOut();
+                    }
+
+                }, 1000);
+            },
+            //超时
+            onTimeOut() {
+                createjs.Sound.play("timeout");
+            },
+            endTick() {
+                clearInterval(this.tickId);
+            },
+            //获取闹钟数字
+            getClockNumberImg(time, index) {
+                let baseUrl = '../assets/img/num/';
+                let strTime = time.toString();
+                if (strTime.length === 3) {
+                    if (index === 0)
+                        return baseUrl + strTime[0] + '.png';
+                    else if (index === 1)
+                        return baseUrl + strTime[1] + '.png';
+                    else if (index === 2)
+                        return baseUrl + strTime[2] + '.png';
+                } else if (strTime.length === 1)
+                    if (index === 0)
+                        return baseUrl + strTime[0] + '.png';
+                    else
+                        return '#';
+                else
+                    return baseUrl + strTime[index] + '.png';
+            },
+            operate(op, num1, num2) {
+                if (num1 === '?' || op === '?' || num1 === '?')
+                    return false;
+                switch (op) {
+                    case 'AND':
+                        return and(num1, num2);
+                    case 'OR':
+                        return or(num1, num2);
+                    case 'NAND':
+                        return nand(num1, num2);
+                    case 'XOR':
+                        return xor(num1, num2);
+                    case 'NOR':
+                        return nor(num1, num2);
+                }
+
+                function and(num1, num2) {
+                    if (num1 === '1' && num2 === '1')
+                        return '1';
+                    return '0';
+                }
+
+                function or(num1, num2) {
+                    if (num1 === '0' && num2 === '0')
+                        return '0';
+                    return '1';
+                }
+
+                function nand(num1, num2) {
+                    if (num1 === '1' && num2 === '1')
+                        return '0';
+                    return '1';
+                }
+
+                function nor(num1, num2) {
+                    if (num1 === '0' && num2 === '0')
+                        return '1';
+                    return '0';
+                }
+
+                function xor(num1, num2) {
+                    if (num1 === '0' && num2 === '0')
+                        return '0';
+                    if (num1 === '1' && num2 === '1')
+                        return '0';
+                    return '1';
+                }
+
+                return false;
+            },
+            mouseoverBtnItem() {
+                createjs.Sound.play("mover");
+            },
+            tipY() {//自定义弹窗yes
+
+                //先关闭弹窗
+                this.tipAlert = false;
+                //如果有二次弹窗
+                if (this.msgList[this.curIndex].y) {
+                    if (this.tipConfirm) {
+                        this.tipAlert = false;
+                        this.tipConfirm = false;
+                        return;
+                    }
+                    this.tipMsg = this.msgList[this.curIndex].y;
+                    this.tipAlert = true;
+                    this.tipConfirm = true;
+                }
+            },
+            tipN() {
+                //自定义 no
+                this.tipAlert = false;
+            },
+            clickTipYes() {
+                //自定义对话框YES按钮点击事件
+                this.modalTips = false;
+            },
+            clickTipNo() {
+                //自定义对话框NO按钮点击事件
+                this.modalTips = false;
+            },
+        },
+    })
+</script>
+
+<style>
+    .modal-custom-body {
+        position: relative;
+    }
+
+    .modal-custom-body .m-bg {
+        width: 100%;
+        position: absolute;
+        top: 0;
+        left: 0;
+        z-index: -1;
+    }
+
+    .modal-custom-body .m-content {
+        width: 80%;
+        position: absolute;
+        top: 90px;
+        left: 40px;
+    }
+
+    .modal-custom-body .m-content p {
+        font-size: 17px;
+    }
+
+    .modal-custom-body .row-button {
+        width: 100%;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+    }
+
+    .modal-custom-body .row-button img {
+        margin-top: 170px;
+        width: 80px;
+        cursor: pointer;
+    }
+
+    .z-modal .ivu-modal-content {
+        background: transparent;
+        box-shadow: none;
+    }
+
+    .z-modal .ivu-modal-close {
+        display: none;
+    }
+
+    .row-level {
+        display: flex;
+        justify-content: space-evenly;
+        align-items: center;
+        padding: 3px 0;
+    }
+
+    .row-level .img-num {
+        width: 36px;
+        height: 40px;
+    }
+
+    .row-level .img-star {
+        width: 32px;
+    }
+
+    .level-body {
+        display: flex;
+        justify-content: center;
+        margin-top: -3vh;
+    }
+
+    .level-content {
+        position: relative;
+    }
+
+    .level-bg {
+        z-index: -1;
+        position: absolute;
+        width: 280px;
+        height: 420px;
+    }
+
+    .img-ribbon {
+        width: 280px;
+        height: 80px;
+    }
+
+    .img-level-close {
+        position: absolute;
+        top: 10px;
+        right: 10px;
+        width: 24px;
+        height: 24px;
+        cursor: pointer;
+    }
+
+    .div-avatar {
+        position: fixed;
+        left: 24px;
+        top: 24px;
+    }
+
+    .div-avatar img {
+        width: 36px;
+        cursor: pointer;
+    }
+
+    .div-music {
+        position: fixed;
+        right: 20px;
+        top: 20px;
+    }
+
+    .div-logout {
+        position: fixed;
+        right: 100px;
+        top: 20px;
+    }
+
+    .div-logout span {
+        width: 60px;
+        color: white;
+        font-family: fantasy;
+        font-size: 20px;
+    }
+
+    .div-music img {
+        width: 50px;
+    }
+
+    .select-logic {
+        border: 2px solid #2b85e4;
+        border-radius: 5px;
+    }
+
+    .select-num {
+        border: 2px solid #2b85e4;
+        border-radius: 5px;
+    }
+
+    .div-clock {
+        width: 50px;
+        height: 50px;
+        background: url("../assets/img/page/clock.png");
+        background-size: cover;
+        text-align: center;
+        padding-top: 20px;
+        margin-bottom: 5px;
+    }
+
+    .div-clock .img-number {
+        position: relative;
+        height: 15px;
+        width: 10px;
+    }
+
+    .zero-one {
+        text-align: center;
+    }
+
+    .zero-one img {
+        height: 8vh;
+        margin-left: 20px;
+        margin-right: 20px;
+        cursor: pointer;
+    }
+
+    .logic-legend {
+        text-align: center;
+    }
+
+    .logic-legend img {
+        width: 80%;
+        cursor: pointer;
+    }
+
+    .main-right {
+        background: #d3f0f4cc;
+        border-radius: 5px;
+        display: flex;
+        height: 70vh;
+    }
+
+    .main-right .left {
+        display: flex;
+        flex-direction: column;
+    }
+
+    .main-right .right {
+        width: 7vw;
+        display: flex;
+        flex-shrink: 0;
+        flex-direction: column;
+        justify-content: space-evenly;
+    }
+
+    .logic-graph {
+        background: white;
+        display: flex;
+        margin: 20px 40px 10px 40px;
+        border: 1px #9acad4 solid;
+        border-radius: 5px;
+    }
+
+    #graph1 {
+        margin: 50px 80px;
+    }
+
+    #graph23 {
+        flex-grow: 1;
+        padding: 20px;
+        border: none;
+        margin: 0;
+        background: transparent;
+        display: flex;
+        align-items: center;
+        justify-content: space-evenly;
+        flex-wrap: wrap;
+    }
+
+    #graph23 canvas {
+        padding-left: 5px;
+        padding-right: 5px;
+        background: white;
+        border: 1px #9acad4 solid;
+        border-radius: 5px;
+        margin-bottom: 10px;
+    }
+
+    #graph23 canvas:hover {
+        border: 1px #e13d13 solid;
+    }
+
+
+    .div-btn {
+        flex-shrink: 0;
+        width: 28%;
+        padding-left: 2%;
+        padding-right: 2%;
+        box-sizing: border-box;
+    }
+
+    .div-btn img.active {
+        width: 100%;
+    }
+
+    .div-btn img {
+        width: 85%;
+        transition: all 0.2s;
+        cursor: pointer;
+    }
+
+    .div-btn img:hover {
+        width: 100%;
+    }
+
+    .div-main {
+        display: flex;
+        padding-right: 5%;
+    }
+
+
+    .row-title {
+        text-align: center;
+    }
+
+    .row-title img {
+        margin-top: 2vh;
+        width: 50%;
+    }
+
+    .row-action {
+        margin-top: -10px;
+        align-items: center;
+        display: flex;
+        padding-right: 5%;
+    }
+
+    .div-action {
+        width: 10%;
+    }
+
+    .div-action img {
+        width: 100%;
+    }
+
+    .div-yes-no {
+        margin-top: -60px;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+    }
+
+    .div-yes-no img {
+        cursor: pointer;
+        width: 80px;
+        box-sizing: border-box;
+    }
+</style>
+</html>
